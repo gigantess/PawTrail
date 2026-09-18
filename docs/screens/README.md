@@ -1,6 +1,6 @@
 # 📱 PawTrail 예상 사용 시나리오 스크린 명세서 (Screen Specifications)
 
-본 문서는 **PawTrail (반려견 맞춤형 안심 노면 산책 플랫폼)**의 핵심 사용자 여정(User Journey)을 구현하기 위한 5대 주요 시나리오 화면의 UI 설계 및 기능 명세서입니다.
+본 문서는 **PawTrail (반려견 맞춤형 안심 노면 산책 플랫폼)**의 개정된 사용자 스토리(US-01 ~ US-16) 및 비전 AI 2대 파이프라인(사전 안내판 판독 & 사후 커뮤니티 지도 보강)을 반영한 핵심 사용자 여정(User Journey) 화면 UI 설계 및 기능 명세서입니다.
 
 ---
 
@@ -8,17 +8,18 @@
 
 ```mermaid
 graph LR
-    S1["1. 산책 플래너<br/>(시간/노면 선택)"] -->|경로 생성| S2["2. 순환 경로 프리뷰<br/>(노면 Polyline & 딥링크)"]
+    S1["1. 산책 플래너<br/>(시간/노면 선택)"] -->|사전 안내판 판독| S4["4. 공원안내판 비전 판독<br/>(금지구역 차단 & 흙길 우선)"]
+    S4 -->|제약 반영 경로 생성| S2["2. 순환 경로 프리뷰<br/>(노면 Polyline & 딥링크)"]
     S2 -->|산책 시작| S3["3. 다크 포켓 모드<br/>(WakeLock & 슬라이드 언락)"]
-    S3 -->|현장 촬영| S4["4. Gemini 노면 진단<br/>(안전 점수 & 우회)"]
-    S4 -->|산책 완주| S5["5. 체크인 & 리포트<br/>(달성률 85% & 즐겨찾기)"]
+    S3 -->|산책 완주| S5["5. 체크인 & 리포트<br/>(달성률 85% & 즐겨찾기)"]
+    S5 -->|노면 사진 후기| S6["6. 커뮤니티 사진 검증<br/>(지도 속성 영구 보강)"]
 ```
 
 ---
 
 ## 1. 01_walk_planner.jpg (대화형 산책 플래너 & 시간/노면 선택)
 
-![01_walk_planner](file:///d:/cody/final/docs/screens/01_walk_planner.jpg)
+![01_walk_planner](file:///d:/cody/PawTrail/docs/screens/01_walk_planner.jpg)
 
 ### 📌 화면 개요 및 목적
 * **화면명**: 맞춤형 산책 플래너 (Walk Planner Screen)
@@ -33,25 +34,26 @@ graph LR
 
 ## 2. 02_route_preview.jpg (지도 기반 안심 순환 경로 프리뷰)
 
-![02_route_preview](file:///d:/cody/final/docs/screens/02_route_preview.jpg)
+![02_route_preview](file:///d:/cody/PawTrail/docs/screens/02_route_preview.jpg)
 
 ### 📌 화면 개요 및 목적
 * **화면명**: 안심 순환 경로 프리뷰 (Route Preview Screen)
-* **연계 사용자 스토리**: **US-03** (순환 루프 경로), **US-07** (지도 시각화 및 외부 길찾기 연동)
+* **연계 사용자 스토리**: **US-03** (순환 루프 경로 및 토지피복 공간 결합), **US-07** (지도 시각화 및 외부 길찾기 연동)
 * **핵심 기능**:
   1. **노면별 색상 구분 Polyline**:
      - 초록색: 잔디길 (`#10B981`)
      - 갈색: 흙길 (`#92400E`)
      - 어두운 회색: 아스팔트 기피 구간
   2. **코스 요약 바텀시트**: 총 1.4km, 예상 25분, 푹신한 노면 비율 **82%** (흙길 60%, 잔디 22%).
-  3. **원터치 산책 시작 버튼**: 한 손 조작을 고려한 화면 하단 40% 영역(Thumb Zone) 배치.
-  4. **외부 네비게이션 딥링크**: 네이버 지도(`nmap://route/walk`), 카카오맵(`kakaomap://route`) 원터치 바로가기.
+  3. **노면 출처 투명성 뱃지**: `환경부 세분류 토지피복지도 (0.90 신뢰도)` 결합 정보 표기.
+  4. **원터치 산책 시작 버튼**: 한 손 조작을 고려한 화면 하단 40% 영역(Thumb Zone) 배치.
+  5. **외부 네비게이션 딥링크**: 네이버 지도(`nmap://route/walk`), 카카오맵(`kakaomap://route`) 원터치 바로가기.
 
 ---
 
 ## 3. 03_pocket_mode.jpg (주머니 보관 초절전 다크 포켓 모드)
 
-![03_pocket_mode](file:///d:/cody/final/docs/screens/03_pocket_mode.jpg)
+![03_pocket_mode](file:///d:/cody/PawTrail/docs/screens/03_pocket_mode.jpg)
 
 ### 📌 화면 개요 및 목적
 * **화면명**: 초절전 다크 포켓 락스크린 (Dark Pocket Mode Screen)
@@ -64,25 +66,26 @@ graph LR
 
 ---
 
-## 4. 04_vision_inspection.jpg (Gemini Vision 현장 노면 실시간 진단)
+## 4. 04_vision_inspection.jpg (공원 종합안내판 비전 판독 및 제약 도출)
 
-![04_vision_inspection](file:///d:/cody/final/docs/screens/04_vision_inspection.jpg)
+![04_vision_inspection](file:///d:/cody/PawTrail/docs/screens/04_vision_inspection.jpg)
 
 ### 📌 화면 개요 및 목적
-* **화면명**: Gemini Vision 노면 안전 진단 (Vision Safety Inspector)
-* **연계 사용자 스토리**: **US-04** (비전 위험도 판독), **US-05** (위험 식별 시 우회 리라우팅)
+* **화면명**: 공원 종합안내판 비전 인스펙터 (Park Board Vision Inspector)
+* **연계 사용자 스토리**: **US-04** (공원 종합안내판 비전 판독 및 산책 제약조건 도출)
 * **핵심 기능**:
-  1. **현장 카메라 뷰파인더**: 산책 중 마주친 바닥 사진 즉시 촬영/업로드.
-  2. **안전 점수 원형 뱃지**: **88점 (SAFE)** 초록빛 HUD 렌더링.
-  3. **위험물 태그 (Hazard Tags)**: `Small Gravel Detected (작은 파쇄석)`, `Dry Ground (건조한 바닥)`, `No Broken Glass (유리 파편 없음)`.
-  4. **Gemini AI 진단 코멘트**: *"노면 가장자리에 작은 파쇄석이 관찰됩니다. 중앙의 부드러운 흙길로 유도하세요."*
-  5. **원터치 조치 버튼**: 우회 경로 재탐색(`Reroute Path`) / 계속 걷기(`Continue Walk`).
+  1. **현장 안내판 카메라 촬영**: 공원 입구 오프라인 종합안내도 사진 촬영 및 업로드.
+  2. **Gemini Flash 구조화 판독 HUD (92% Confidence)**:
+     - **흙길 산책로 감지 (88% Match)**: 비포장 흙길 코스 영역을 녹색으로 시각화.
+     - **반려견 출입 금지 구역 감지 (94% Match)**: 어린이놀이터, 생태연못 관찰데크를 붉은색 차단 구역으로 식별.
+  3. **AI 제약조건 자동 변환**: 금지 구역은 라우팅 차단 노드로 격리하고 흙길 산책로를 우선 경유지로 설정.
+  4. **원터치 조치 버튼**: 제약조건 반영 및 코스 생성 (`Apply Constraints & Generate Route`).
 
 ---
 
 ## 5. 05_walk_report.jpg (산책 완료 체크인 & 안심 리포트)
 
-![05_walk_report](file:///d:/cody/final/docs/screens/05_walk_report.jpg)
+![05_walk_report](file:///d:/cody/PawTrail/docs/screens/05_walk_report.jpg)
 
 ### 📌 화면 개요 및 목적
 * **화면명**: 완주 체크인 및 산책 리포트 (Walk Completion & Check-In Report)
@@ -91,9 +94,26 @@ graph LR
   1. **축하 헤더**: *"WALK COMPLETE! 코코가 푹신한 길을 걸었어요 🐾"*
   2. **선호 노면 달성률 게이지**: **85% 달성** (흙길 60%, 잔디 25%).
   3. **핵심 보행 통계**: 총 이동 거리 1.35km, 소요 시간 26분, 평균 속도 3.1km/h.
-  4. **노면 만족도 평가**: 5점 만점 별점 평가 폼 (다음 산책 피드포워드 반영).
+  4. **노면 만족도 평가**: 5점 만점 별점 평가 폼 (다음 산책 피드포워드 가중치 반영).
   5. **커뮤니티 피드 공유 버튼**: 견주 사생활 보호를 위한 **출발지/도착지 150m 안심 마스킹** 적용 락 아이콘.
   6. **나만의 안심 코스 즐겨찾기 (US-14)**: 검증된 코스를 원터치로 북마크에 저장.
+
+---
+
+## 6. 06_community_enrichment.jpg (완주 후기 사진 비전 검증 및 지도 영구 보강)
+
+![06_community_enrichment](file:///d:/cody/PawTrail/docs/screens/06_community_enrichment.jpg)
+
+### 📌 화면 개요 및 목적
+* **화면명**: 커뮤니티 노면 제보 검증 및 지도 보강 (Community Surface Enrichment)
+* **연계 사용자 스토리**: **US-05** (완주 후기 사진 비전 검증 기반 지도 속성 영구 보강)
+* **핵심 기능**:
+  1. **완주 후기 사진 비전 판독**: 견주가 산책 후기에 업로드한 현장 바닥 사진을 Gemini Flash로 실시간 분석.
+  2. **노면 재질 및 안전성 검증 (91% Confidence)**:
+     - 검증 노면: `비포장 흙길 (Natural Dirt Path)` 판정.
+     - 발바닥 안전: `Paw Safe (유리/파쇄석 없음)` 판정.
+  3. **지도 속성 영구 보강 (Milestone)**: 신뢰도 $\ge 0.85$ 충족으로 해당 OSM Way `#987654`의 `surface` 속성을 `community_verified`로 즉시 DB에 영구 반영.
+  4. **기여 리워드 지급**: 노면 지도 기여 보상으로 `+10 Community Points 🐾` 적립.
 
 ---
 
