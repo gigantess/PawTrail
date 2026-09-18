@@ -199,12 +199,12 @@ flowchart TD
 | **Slide 2** | **Problem** | 기존 상용 지도(네이버/카카오)의 한계: "최단거리만 알려줄 뿐, 바닥이 흙길인지 아스팔트인지 알 수 없다" + "리드줄을 잡고 화면만 보며 걷는 위험" |
 | **Slide 3** | **Solution** | PawTrail 핵심 가치: **"선호 노면 맞춤 순환 라우팅 & 핸즈프리 음성 안내 안심 플랫폼"** 시연 영상 |
 | **Slide 4** | **Key Features** | 1) 자연어 산책 플래너 2) 노면 맞춤 라우팅 3) 공원안내판 비전 4) Eyes-Free 백그라운드 음성 길 안내 |
-| **Slide 5** | **Architecture** | LangGraph Agent, FastAPI, Supabase Memory, React Native Expo + EAS OTA, n8n 일일 알림 |
+| **Slide 5** | **Architecture** | LangGraph Agent, FastAPI, Firebase Memory, React Native Expo + EAS OTA, n8n 일일 알림 |
 | **Slide 6** | **Tech Pivot 1 (Map)** | **[위성 CV의 한계 vs 토지피복 Spatial Join]** 나무 그늘 사진 비교 ➔ 0.1초 만에 100% 정밀도 달성한 엔지니어링 결정 |
 | **Slide 7** | **Tech Pivot 2 (Vision)** | **[실시간 촬영의 위험 vs 사전 안내판 판독 & 사후 집단지성]** 현장 리드줄 위험성 ➔ 종합안내판 JSON 파싱 데모 |
 | **Slide 8** | **Native UX & Emotion** | **[주머니 속 음성 길 안내 & 웰니스 순화]** 화면 꺼진 폰 주머니 보관 중 TTS 안내 + "슬개골 탈구 대신 폭신한 길" 감성 UX |
 | **Slide 9** | **Field CBT (5인)** | 실제 5마리 강아지의 필드 산책 사진 및 피드백 ➔ 핸즈프리 만족도 및 알고리즘 가중치 튜닝 결과 |
-| **Slide 10** | **Conclusion** | 16개 스토리 / 62 pt / 330 h 완수 및 DoD 100% 달성 ➔ **"반려견에게 산책은 하루의 전부입니다. 가장 편안하고 안전한 발걸음을 선물합니다."** |
+| **Slide 10** | **Conclusion** | 16개 스토리 / 62 pt / 334 h 완수 및 DoD 100% 달성 ➔ **"반려견에게 산책은 하루의 전부입니다. 가장 편안하고 안전한 발걸음을 선물합니다."** |
 
 ---
 

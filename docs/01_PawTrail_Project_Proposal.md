@@ -72,7 +72,7 @@
      1. **공원 종합안내판 판독 (`ParkBoardInspector`)**: 공원 입구 안내판 사진에서 흙길/잔디마당 산책로 범례와 반려견 출입 금지 구역을 파싱하여 구조화된 JSON(`ParkBoardInspectionResult`) 반환.
      2. **커뮤니티 제보 검증 (`CommunityMapEnricher`)**: 완주 후 견주가 업로드한 현장 노면 사진의 재질(`dirt`, `grass`, `paved` 등) 및 발바닥 위험요소를 검증하여 지도 링크 속성(`SurfaceEnrichmentResult`) 갱신.
 3. **Long-term Memory (Canine Context Memory)**:
-   - Supabase(PostgreSQL)에 견종, 체중, 관절 안심 케어 선호도(일반/폭신한 길 위주), **사용자 기본 선호 노면**, 이전 산책 피드백 및 나만의 코스 즐겨찾기 저장.
+   - Firebase(Cloud Firestore)에 견종, 체중, 관절 안심 케어 선호도(일반/폭신한 길 위주), **사용자 기본 선호 노면**, 이전 산책 피드백 및 나만의 코스 즐겨찾기 저장.
    - 에이전트 프롬프트에 최근 5회 산책 요약 및 맞춤형 가중치 주입.
 4. **자동화 워크플로우 (n8n Webhook Pipeline)**:
    - 매일 오전 기상청 단기예보를 수집하고 경험적 지면열 수지식을 실행:  
@@ -121,10 +121,10 @@ $$\text{Cost}(e) = \text{Length}(e) \times W_{\text{base}}(\text{surface}(e)) \t
 | **노면 맞춤 플래닝** | **선호 노면 & 산책 시간 맞춤 코스 생성** | 목표 시간(10~90분) 및 선호 노면(흙/잔디)을 반영해 토지피복 공간결합 기반 가용 노면 비중을 극대화한 순환 산책로 생성 | AI Agent + Routing API + Spatial Join Tool |
 | **핸즈프리 보행 안내** | **시선 해방(Eyes-Free) 핸즈프리 음성 길 안내** | 스마트폰을 주머니에 넣고 화면을 끈 채 OSRM 안내 스텝 기반 갈림길 회전("50m 앞 우회전") 및 노면 변화("폭신한 잔디길 진입")를 폰 스피커/이어폰으로 실시간 음성 송출 | React Native (Expo Background GPS & Speech TTS) |
 | **사전 비전 분석** | **공원 종합안내판 비전 판독 (`ParkBoardInspector`)** | 공원 입구 오프라인 안내판 사진을 촬영·업로드하면 흙길/잔디마당 및 반려견 출입 금지 구역을 사전에 시각 판독 | Gemini 1.5 Flash Vision |
-| **완주 피드백 & 보정** | **커뮤니티 노면 제보 검증 (`CommunityMapEnricher`)** | 완주 후 견주의 노면 사진 후기를 비전 모델이 자동 판독하여 결측된 지도 링크 속성을 영구 갱신하는 참여형 선순환 | Gemini 1.5 Flash + Supabase |
+| **완주 피드백 & 보정** | **커뮤니티 노면 제보 검증 (`CommunityMapEnricher`)** | 완주 후 견주의 노면 사진 후기를 비전 모델이 자동 판독하여 결측된 지도 링크 속성을 영구 갱신하는 참여형 선순환 | Gemini 1.5 Flash + Firebase (Firestore/Storage) |
 | **안심 거점 연계** | 주차장 P&R(Park & Walk) | 인근 공영주차장 정보를 실시간 연동해 차량 주차 후 바로 산책하는 코스 추천 | Public Data API Tool |
-| **산책 기록 (Tracking)** | 백그라운드 노면 트래킹 & 완주 리포트 | Android Foreground Service 기반 백그라운드 GPS 무중단 수신, 실제 흙/잔디 달성률 및 관절 안심 걸음 수 인포그래픽 기록 | Expo Location TaskManager & Supabase |
-| **개인화 보관함** | 나만의 코스 즐겨찾기 보관 | 마음에 드는 검증된 안심 코스를 원터치 북마크에 저장하고 즉시 재산책 연동 | Supabase Database |
+| **산책 기록 (Tracking)** | 백그라운드 노면 트래킹 & 완주 리포트 | Android Foreground Service 기반 백그라운드 GPS 무중단 수신, 실제 흙/잔디 달성률 및 관절 안심 걸음 수 인포그래픽 기록 | Expo Location TaskManager & Firebase (Firestore) |
+| **개인화 보관함** | 나만의 코스 즐겨찾기 보관 | 마음에 드는 검증된 안심 코스를 원터치 북마크에 저장하고 즉시 재산책 연동 | Firebase Cloud Firestore |
 | **커뮤니티 & 피드** | 산책 코스 공유 (개인정보 보호) | 완주한 안심 코스를 공유하되, 출발지/집 주소 노출 방지(좌표 블러링) 처리 적용 | Social Community Module |
 | **스케줄 자동화** | 날씨 연동 지면열 위험 알림 | 기상청 기온/일사량 추정 수지식 기반 35℃ 이하 안전 산책 골든타임 알림 (추정 위험 정보로 표기) | n8n Automation |
 

@@ -18,7 +18,7 @@
     - React Native (Expo SDK 51+) 및 TypeScript 기반 모바일 앱 구축 (US-07)
     - React Native Maps 기반 노면별 색상 구분 Polyline 렌더링, Android Foreground Service 및 expo-speech 기반 시선 해방(Eyes-Free) & 두 손 자유(Hands-Free) 백그라운드 음성 길 안내 구현 (US-07, US-08, US-09, US-14, US-15)
   * **Member E (Infra, Automation & QA Lead)**:
-    - Supabase(PostgreSQL) 구조화 데이터 기반 Long-term Memory DB 및 즐겨찾기 스키마, EAS Build(1회 Android APK) 및 EAS Update(무선 OTA)/Render CI/CD 배포 자동화 (US-06, US-10, US-14)
+    - Firebase(Cloud Firestore) 기반 Long-term Memory DB 및 즐겨찾기 스키마, EAS Build(1회 Android APK) 및 EAS Update(무선 OTA)/Render CI/CD 배포 자동화 (US-06, US-10, US-14)
     - n8n 기상청 지면열 연동 일일 산책 골든타임 알림 워크플로우 구축 (US-12)
     - **최소 5인 실사용자 CBT 운영, 피드백 수집 및 분석 리포트 총괄 (US-11)**
 
@@ -57,7 +57,7 @@
     - React Native Maps 컴포넌트 초기화 및 맵 캔버스/컨트롤 UI 구성.
   * **Member E (Infra/QA)**:
     - GitHub Organization 세팅, Git-flow 브랜치 전략(`main`, `develop`, `feature/*`), PR 템플릿 확립.
-    - Supabase 인스턴스 생성 및 스키마(`users`, `dogs`, `walk_history`, `feedback`) DDL 배포 (US-06).
+    - Firebase 프로젝트 생성 및 Cloud Firestore 컬렉션(`users`, `dogs`, `walk_history`, `feedback`) 및 Security Rules 배포 (US-06).
 
 ### Week 2 (Sprint 1 종료): 개별 AI 모듈 독립 구현 & 노면 가중치 라우팅
 * **주간 목표**: 사용자 선호 노면 순환 라우팅 완료, 비전 판독 및 메모리 모듈 단위 테스트 100% 통과.
@@ -78,7 +78,7 @@
     - 선호 노면 선택 칩 UI(흙길, 잔디길, 탄성포장, 보도블록) 및 에이전트 채팅 버블 컴포넌트 개발.
     - 공원 안내판 촬영 및 후기 사진 업로드 컴포넌트 구현.
   * **Member E (Infra/QA)**:
-    - Supabase 기반 Long-term Memory CRUD API 구현 및 에이전트 연동 테스트 (US-06).
+    - Firebase Cloud Firestore 기반 Long-term Memory CRUD API 구현 및 에이전트 연동 테스트 (US-06).
     - Sprint 1 리뷰 및 데모 진행 (중간 산출물 점검).
 
 ### Week 3 (Sprint 2 시작): 서비스 통합, 산책 기록 & n8n 자동화
@@ -100,8 +100,8 @@
     - 산책 경로 상세 및 완주 카드 내 북마크(나만의 코스) 원터치 토글 및 보관함 목록 UI 구현 (US-14).
   * **Member E (Infra/QA)**:
     - n8n 워크플로우 구현: 기상청 단기예보 조회 → 지면열 회귀 연산 → 35℃ 이하 골든타임 웹훅 알림 발송 (US-12).
-    - 커뮤니티 피드 테이블 구축 및 산책 완주 기록 저장 연동 (US-09).
-    - 즐겨찾기(북마크) CRUD API (`POST /api/walks/{id}/favorite`, `GET /api/favorites`) 및 Supabase 테이블 연동 (US-14).
+    - 커뮤니티 피드 컬렉션 구축 및 산책 완주 기록 저장 연동 (US-09).
+    - 즐겨찾기(북마크) CRUD API (`POST /api/walks/{id}/favorite`, `GET /api/favorites`) 및 Cloud Firestore(`users/{userId}/favorites`) 연동 (US-14).
 
 ### Week 4 (Sprint 2 종료): 외부 클라우드 배포 & 실사용자 5인 CBT
 * **주간 목표**: 외부 접근 가능한 퍼블릭 배포 완료, 실사용자 5인 이상 섭외 및 필드 테스트 수행, 1차 피드백 수집.

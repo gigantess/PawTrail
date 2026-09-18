@@ -99,9 +99,9 @@
 #### US-06: 반려견 건강 프로필 및 과거 산책 이력 기억 (3 pt / 총 22h)
 * **담당**: Member E (Sub: Member A) | **스프린트**: Sprint 1 (Week 2)
 * **상세 작업 분할 (Task Breakdown)**:
-  * **TASK-06-1**: Supabase 테이블 DDL 설계 (`users`, `dogs`, `walk_history`, `feedback`) (4h / Member E)
-    - 견종, 관절 안심 케어 수준(0~4), 선호 노면 배열, 산책 거리/시간/노면비율 필드 구성.
-  * **TASK-06-2**: Long-term Memory 조회/적재 FastAPI 비동기 CRUD 모듈 구현 (6h / Member E)
+  * **TASK-06-1**: Cloud Firestore 컬렉션 스키마 및 인덱스 설계 (`users`, `dogs`, `walk_history`, `feedback`) (4h / Member E)
+    - 견종, 관절 안심 케어 수준(0~4), 선호 노면 배열, 산책 거리/시간/노면비율 및 Firestore Security Rules 정의.
+  * **TASK-06-2**: Firebase Admin SDK 연동 및 Long-term Memory 비동기 CRUD 모듈 구현 (6h / Member E)
     - 유저 세션별 반려견 프로필 및 최근 5회 산책 요약 데이터 캐싱 및 조회 함수 작성.
   * **TASK-06-3**: LangGraph Agent 노드 내 이전 산책 맥락(피로도, 선호도) 동적 인젝션 (8h / Member A)
     - "지난 산책에서 언덕을 힘들어함" 피드백을 시스템 프롬프트의 동적 제약조건으로 주입.
@@ -112,7 +112,7 @@
 * **담당**: Member D, E | **스프린트**: Sprint 2 (Week 3~4)
 * **상세 작업 분할 (Task Breakdown)**:
   * **TASK-14-1**: 즐겨찾기 북마크 추가/삭제 및 목록 조회 REST API 구현 (5h / Member E)
-    - `POST /api/walks/{id}/favorite` 및 `GET /api/favorites` 엔드포인트 구현, Supabase `favorites` 테이블 DDL 및 RLS 정책 적용.
+    - `POST /api/walks/{id}/favorite` 및 `GET /api/favorites` 엔드포인트 구현, Cloud Firestore `users/{userId}/favorites` 하위 컬렉션 연동 및 Security Rules 적용.
   * **TASK-14-2**: 프론트엔드 북마크 토글 버튼 및 보관함 '나만의 코스' 목록 UI 컴포넌트 개발 (7h / Member D)
     - 산책 상세 및 완주 카드 내 북마크 아이콘 원터치 토글, 프로필/보관함 탭에서 저장된 코스 목록(거리, 노면비율, 시간) 즉시 조회 및 맵 렌더링 연동.
 
@@ -142,8 +142,8 @@
     - 30m 전 회전 지점 도달 시 "50m 앞 부드러운 흙길입니다. 우회전하세요" 사전 음성 브리핑 및 경로 이탈 알림.
   * **TASK-08-3**: 통과한 도로 링크의 노면 비율 집계 및 '선호 노면 달성률(%)' 산출 엔진 (6h / Member C, D)
     - 주행 궤적과 도로망 링크의 공간 매핑을 통해 실제 밟은 흙길/잔디길 비율 계산.
-  * **TASK-08-4**: 산책 완료 시 요약 인포그래픽 생성 및 Supabase 기록 저장 연동 (6h / Member D, E)
-    - 산책 결과 리포트 모달 제작 및 DB 적재.
+  * **TASK-08-4**: 산책 완료 시 요약 인포그래픽 생성 및 Cloud Firestore 기록 저장 연동 (6h / Member D, E)
+    - 산책 결과 리포트 모달 제작 및 Firestore `walk_history` 컬렉션 적재.
 
 #### US-09: 안심 코스 커뮤니티 피드 공유 및 피드백 제출 (3 pt / 총 16h)
 * **담당**: Member D (Sub: Member E) | **스프린트**: Sprint 2 (Week 3~4)
@@ -152,8 +152,8 @@
     - 다른 사용자가 완주한 코스 썸네일, 흙길 비율, 소요 시간 브라우징 기능.
   * **TASK-09-2**: 코스 별점(1~5점) 및 정성 피드백 텍스트 제출 폼 모달 구현 (4h / Member D)
     - 견주 후기 및 바닥 상태 한줄평 입력창 연동.
-  * **TASK-09-3**: 피드백 데이터 DB 저장 및 개인정보 보호 좌표 마스킹 연동 (6h / Member E, D)
-    - 저장된 피드백 목록 브라우징 및 출발지/집 주소 노출 방지(좌표 블러링) 처리.
+  * **TASK-09-3**: 피드백 데이터 Cloud Firestore 저장 및 개인정보 보호 좌표 마스킹 연동 (6h / Member E, D)
+    - `community_feed` 컬렉션 브라우징 및 출발지/집 주소 노출 방지(좌표 블러링) 처리.
 
 #### US-10: EAS Build/Update 기반 무선 배포 및 AI 윤리/면책 고지 (3 pt / 총 16h)
 * **담당**: Member E (Sub: Member C, D) | **스프린트**: Sprint 2 (Week 4)
@@ -168,8 +168,8 @@
 #### US-15: 네트워크 단절 시 오프라인 지도 캐시 및 산책 유지 (2 pt / 총 10h)
 * **담당**: Member D | **스프린트**: Sprint 2 (Week 4)
 * **상세 작업 분할 (Task Breakdown)**:
-  * **TASK-15-1**: AsyncStorage 기반 추천 경로 GeoJSON 및 지도 타일 로컬 사전 캐싱 모듈 구현 (5h / Member D)
-    - 코스 생성 시 해당 경로 주변의 벡터 타일과 GeoJSON 데이터를 기기 로컬 캐시에 즉각 프리캐싱.
+  * **TASK-15-1**: Cloud Firestore 내장 Offline Persistence 및 로컬 벡터 타일 캐싱 모듈 구현 (5h / Member D)
+    - 코스 생성 시 해당 경로 주변의 벡터 타일과 Firestore 로컬 오프라인 캐시를 즉각 활성화.
   * **TASK-15-2**: NetInfo 기반 네트워크 단절 감지 토스트 UI 및 로컬 체크인 임시 저장/자동 동기화 구현 (5h / Member D)
     - 오프라인 상태 안내 토스트 및 오프라인 산책 완료 시 로컬 스토리지 임시 보관, 네트워크 복구 시 백엔드 DB 자동 동기화.
 

@@ -37,7 +37,7 @@ flowchart TB
 
     subgraph Gateway["[API Gateway & Backend] FastAPI"]
         Router[REST API Router & CORS]
-        Auth[Supabase Auth Guard]
+        Auth[Firebase Auth Guard]
         Validator[Pydantic V2 Strict Validator]
     end
 
@@ -56,10 +56,10 @@ flowchart TB
         Tool_Memory[Dog Profile & History Tool]
     end
 
-    subgraph Data_Tier["[Data & Persistence Tier] Supabase"]
-        PG[(PostgreSQL Relational DB)]
-        VectorDB[(pgvector Semantic Memory)]
-        Storage[(Supabase Storage - 안내판/노면 사진)]
+    subgraph Data_Tier["[Data & Persistence Tier] Firebase (GCP)"]
+        Firestore[(Cloud Firestore - NoSQL Document DB)]
+        Storage[(Cloud Storage - 안내판/노면 사진 버킷)]
+        FCM[Firebase Cloud Messaging - 모바일 푸시 알림]
     end
 
     subgraph External["[External Services & Automation]"]
@@ -80,8 +80,7 @@ flowchart TB
 
     Agent <--> State
     Agent <--> MemoryManager
-    MemoryManager <--> PG
-    MemoryManager <--> VectorDB
+    MemoryManager <--> Firestore
 
     Agent --> Tool_Spatial
     Agent --> Tool_Route
@@ -253,77 +252,148 @@ $$\text{Cost}(e) = \text{Length}(e) \times W_{\text{base}}(\text{surface}(e)) \t
 
 ---
 
-### 3.5 데이터베이스 및 영속성 계층 (Data Tier)
+### 3.5 데이터베이스 및 영속성 계층 (Data Tier - Cloud Firestore)
 
-#### 1. 관계형 데이터 모델 (ERD)
+#### 1. Cloud Firestore NoSQL 컬렉션 계층 구조
+모바일 클라이언트(React Native Expo)와의 실시간 동기화(`onSnapshot`), 내장 오프라인 지속성(Offline Persistence), 고성능 문서 조회를 위해 **Cloud Firestore**를 메인 데이터 저장소로 채택한다.
+
 ```mermaid
-erDiagram
-    USERS ||--o{ DOGS : owns
-    USERS ||--o{ WALK_HISTORY : completes
-    USERS ||--o{ SURFACE_REPORTS : reports
-    USERS ||--o{ FAVORITES : bookmarks
-    DOGS ||--o{ WALK_HISTORY : participates
-    WALK_HISTORY ||--o| FEEDBACK : receives
-    WALK_HISTORY ||--o{ FAVORITES : saved_as
+graph TD
+    users["users/{userId}<br/>(견주 프로필, 약관 동의)"]
+    dogs["users/{userId}/dogs/{dogId}<br/>(반려견 프로필, 관절 케어 레벨, 선호 노면)"]
+    favorites["users/{userId}/favorites/{favId}<br/>(나만의 코스 북마크)"]
+    walk_history["walk_history/{walkId}<br/>(산책 완주 궤적 GeoJSON, 노면 달성률, 소요시간)"]
+    feedback["walk_history/{walkId}/feedback/{feedbackId}<br/>(별점 후기, 노면 일치 여부)"]
+    community_feed["community_feed/{feedId}<br/>(좌표 마스킹 공개 코스, 추천수, 후기)"]
+    surface_reports["surface_reports/{reportId}<br/>(안내판/현장 사진 비전 분석 및 지도 보강 데이터)"]
+    osm_cache["osm_ways/{wayId}<br/>(OSM 링크 지오메트리 & 검증 노면 캐시)"]
 
-    USERS {
-        uuid id PK
-        string email
-        string nickname
-        timestamp created_at
-    }
+    users --> dogs
+    users --> favorites
+    users --> walk_history
+    walk_history --> feedback
+    walk_history -.-> community_feed
+    users --> surface_reports
+```
 
-    DOGS {
-        uuid id PK
-        uuid user_id FK
-        string name
-        string breed
-        int age
-        float weight_kg
-        int joint_care_level "관절 안심 케어 수준 0~4"
-        string[] default_preferred_surfaces "기본 선호 노면"
-    }
+#### 2. 컬렉션별 세부 문서(Document) 스키마
 
-    WALK_HISTORY {
-        uuid id PK
-        uuid user_id FK
-        uuid dog_id FK
-        jsonb route_geojson "실제 추천/완주 경로"
-        float total_distance_m
-        int duration_seconds
-        jsonb surface_breakdown "노면별 비율 {grass: 0.6, dirt: 0.3, ...}"
-        timestamp completed_at
-    }
+* **`users/{userId}`**
+  ```json
+  {
+    "userId": "string (Firebase Auth UID)",
+    "email": "string",
+    "nickname": "string",
+    "termsAgreedAt": "timestamp",
+    "createdAt": "timestamp"
+  }
+  ```
 
-    FEEDBACK {
-        uuid id PK
-        uuid walk_history_id FK
-        int surface_satisfaction_rating "1~5점"
-        boolean surface_accuracy_match "실제 노면 일치 여부"
-        string comment
-    }
+* **`users/{userId}/dogs/{dogId}`**
+  ```json
+  {
+    "dogId": "string (UUID)",
+    "name": "string",
+    "breed": "string",
+    "age": "number",
+    "weightKg": "number",
+    "jointCareLevel": "number (0~4, 관절 안심 케어 수준)",
+    "defaultPreferredSurfaces": ["dirt", "grass"],
+    "updatedAt": "timestamp"
+  }
+  ```
 
-    SURFACE_REPORTS {
-        uuid id PK
-        uuid user_id FK
-        string report_type "park_board or community_review"
-        float latitude
-        float longitude
-        string photo_url
-        string detected_surface "검증/인식 노면"
-        float confidence "비전 신뢰도 0.0~1.0"
-        string[] restricted_zones "반려견 출입금지 구역"
-        string osm_way_id "연계 도로/산책로 ID"
-        timestamp created_at
-    }
+* **`walk_history/{walkId}`**
+  ```json
+  {
+    "walkId": "string (UUID)",
+    "userId": "string",
+    "dogId": "string",
+    "routeGeojson": "map (GeoJSON FeatureCollection)",
+    "totalDistanceM": "number",
+    "durationSeconds": "number",
+    "surfaceBreakdown": {
+      "dirt": 0.45,
+      "grass": 0.35,
+      "paved": 0.20
+    },
+    "greenRatio": "number (0.80)",
+    "targetDurationMinutes": "number",
+    "completedAt": "timestamp"
+  }
+  ```
 
-    FAVORITES {
-        uuid id PK
-        uuid user_id FK
-        uuid walk_history_id FK
-        string title "나만의 코스 별칭"
-        timestamp created_at
+* **`community_feed/{feedId}`**
+  ```json
+  {
+    "feedId": "string (UUID)",
+    "walkId": "string",
+    "maskedRouteGeojson": "map (출발/도착지 100~200m 지터링 처리된 GeoJSON)",
+    "dogBreed": "string",
+    "greenRatio": "number",
+    "rating": "number (1~5)",
+    "comment": "string",
+    "likeCount": "number",
+    "createdAt": "timestamp"
+  }
+  ```
+
+* **`users/{userId}/favorites/{favId}`**
+  ```json
+  {
+    "favId": "string (UUID)",
+    "walkId": "string",
+    "title": "string (나만의 코스 별칭)",
+    "distanceM": "number",
+    "greenRatio": "number",
+    "createdAt": "timestamp"
+  }
+  ```
+
+* **`surface_reports/{reportId}`**
+  ```json
+  {
+    "reportId": "string (UUID)",
+    "userId": "string",
+    "reportType": "park_board | community_review",
+    "photoUrl": "string (Firebase Cloud Storage URL)",
+    "detectedSurface": "dirt | grass | asphalt",
+    "confidence": "number (0.0~1.0)",
+    "restrictedZones": ["playground", "lawn_forbidden"],
+    "osmWayId": "string",
+    "status": "verified | pending_review",
+    "createdAt": "timestamp"
+  }
+  ```
+
+#### 3. Firebase Security Rules (선언적 보안 가드레일)
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. 유저 및 반려견 프로필: 본인만 읽기/쓰기 가능
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /dogs/{dogId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      match /favorites/{favId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
+    // 2. 산책 기록: 본인 작성/조회
+    match /walk_history/{walkId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    // 3. 커뮤니티 피드: 인증된 사용자 전체 읽기 허용, 본인 글만 작성/수정
+    match /community_feed/{feedId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}
 ```
 
 ---
@@ -339,7 +409,7 @@ sequenceDiagram
     participant Navi as Voice Navi Engine (Foreground Service)
     participant API as FastAPI Backend
     participant Agent as LangGraph Agent
-    participant Mem as Supabase Memory
+    participant Mem as Firebase Cloud Firestore
     participant RouterTool as Routing Tool (ORS)
 
     User->>Front: 선호 노면 선택(흙/잔디) & 20분 코스 요청
@@ -397,7 +467,7 @@ sequenceDiagram
     participant Front as Expo App (Frontend)
     participant API as FastAPI Backend
     participant Vision as Gemini Flash (CommunityMapEnricher)
-    participant DB as Supabase (OSM Cache / Metadata)
+    participant DB as Firebase (Firestore / Metadata)
 
     User->>Front: 산책 완료 후기 작성 (노면 현장 사진 첨부)
     Front->>API: POST /api/walks/verify-surface (Multipart Image, link_id)
@@ -420,7 +490,7 @@ sequenceDiagram
 |---|---|---|---|
 | **Frontend** | React Native (Expo SDK 51+), TypeScript | **EAS (Expo Application Services)** | EAS Build(단 1회 Android APK 배포) + EAS Update(GitHub Actions 연동 무선 OTA 즉시 배포) |
 | **Backend & AI** | FastAPI, Python 3.11 | **Render / Cloud Run** | Docker 컨테이너 기반 자동 빌드, Healthcheck(`/healthz`), CORS 도메인 격리 |
-| **Database & Auth** | Supabase (PostgreSQL) | **Supabase Cloud** | pgvector 익스텐션 활성화, RLS(Row Level Security) 정책, Storage 버킷 |
+| **Database & Auth** | Firebase (GCP) | **Firebase Cloud** | Firebase Auth (구글/익명), Cloud Firestore NoSQL, Cloud Storage, Firebase Security Rules |
 | **스케줄 자동화** | n8n | **n8n Cloud / Self-hosted** | 기상청 지면열 연동 일일 크론(오전 9시) ➔ 안전 산책 골든타임 웹훅 발송 |
 | **테스트 & CI** | GitHub Actions | **GitHub CI** | PR 생성 시 자동 Lint(SonarLint) + Pytest/Jest 단위 테스트 100% 통과 게이트 |
 

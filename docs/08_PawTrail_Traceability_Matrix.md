@@ -37,10 +37,10 @@ graph LR
 | **US-02** | 사용자 선호 노면 선택 및 가중치 적용<br>`[Epic 1]` | **Pain Point 1**<br>아스팔트/인조잔디 열기 및 관절 부담, 흙길·잔디길 갈망 | Weight Dynamic Engine<br>$W_{\text{base}}$, $W_{\text{pref}}$ ($0.4\sim0.5$) | (내부 라우터 모듈 파라미터) | `osm_ways`<br>(surface, cost) | TASK-02-1, TASK-02-2,<br>TASK-02-3, TASK-02-4 | Sprint 1<br>(Week 2) | 5 pt | 28 h | Member C<br>(Sub: A, D) |
 | **US-03** | Waypoint 최적화, Routing API 연동 & 토지피복도 보정<br>`[Epic 1]` | **Pain Point 1, 2**<br>포장 도로 위주의 네비게이션, 공원 흙길 데이터 부재 | GIS Pipeline, NetworkX,<br>GeoPandas, ORS/OSRM Adapter | `GET /api/routes/benchmark` | `osm_ways`<br>`surface_source` (5단계) | TASK-03-1, TASK-03-2,<br>TASK-03-3, TASK-03-4 | Sprint 1<br>(Week 1~2) | 8 pt | 38 h | Member C, A |
 | **US-16** | 산책 시간(10~90분) 기반 맞춤형 코스 생성<br>`[Epic 1]` | **Pain Point 3**<br>바쁜 일상 속 정확한 산책 소요 시간 예측 및 루프 회귀 필요 | Walking Speed Engine<br>(3.0/3.6/4.2/2.4 km/h), Waypoint Tuner | `POST /api/routes/agent-plan` (duration) | `walk_history`<br>(target_duration) | TASK-16-1, TASK-16-2,<br>TASK-16-3 | Sprint 1<br>(Week 1~2) | 3 pt | 16 h | Member A, C<br>(Sub: D) |
-| **US-04** | 공원 종합안내판 비전 판독 및 제약 도출<br>`[Epic 2]` | **Pain Point 2**<br>현장 표지판의 반려견 출입금지·노면 정보 미반영 | Vision Multimodal Agent<br>`ParkBoardInspector` (Gemini Flash) | `POST /api/vision/inspect-board` | `park_boards` | TASK-04-1, TASK-04-2,<br>TASK-04-3, TASK-04-4 | Sprint 1<br>(Week 1~2) | 5 pt | 26 h | Member B |
+| **US-04** | 공원 종합안내판 비전 판독 및 제약 도출<br>`[Epic 2]` | **Pain Point 2**<br>현장 표지판의 반려견 출입금지·노면 정보 미반영 | Vision Multimodal Agent<br>`ParkBoardInspector` (Gemini Flash) | `POST /api/vision/inspect-board` | `surface_reports` | TASK-04-1, TASK-04-2,<br>TASK-04-3, TASK-04-4 | Sprint 1<br>(Week 1~2) | 5 pt | 26 h | Member B |
 | **US-05** | 완주 후기 사진 비전 검증 기반 지도 영구 보강<br>`[Epic 2]` | **Pain Point 2**<br>폐쇄적 지도 데이터의 한계, 집단지성 맵 최신화 | `CommunityMapEnricher`<br>(신뢰도 0.85 임계치 판정) | `POST /api/vision/verify-surface` | `osm_ways`<br>(community_verified) | TASK-05-1, TASK-05-2,<br>TASK-05-3 | Sprint 2<br>(Week 3) | 3 pt | 16 h | Member B, C |
-| **US-06** | 반려견 프로필 및 산책 이력 기억<br>`[Epic 3]` | **Pain Point 3**<br>매번 반려견 정보 재입력 번거로움 및 피로도 누적 | Long-term Memory Cache,<br>LangGraph System Context Injector | `GET /api/dogs/{id}/profile`<br>`POST /api/dogs/{id}/profile` | `dogs`, `walk_history`,<br>`feedback` | TASK-06-1, TASK-06-2,<br>TASK-06-3, TASK-06-4 | Sprint 1<br>(Week 2) | 3 pt | 22 h | Member E, A |
-| **US-14** | 나만의 코스(즐겨찾기) 보관<br>`[Epic 3]` | **Pain Point 3**<br>만족스러웠던 산책 코스를 재탐색 없이 즉시 재방문 | Favorites Manager & UI Component | `POST /api/walks/{id}/favorite`<br>`GET /api/favorites` | `favorites` (RLS 적용) | TASK-14-1, TASK-14-2 | Sprint 2<br>(Week 3~4) | 2 pt | 12 h | Member D, E |
+| **US-06** | 반려견 프로필 및 산책 이력 기억<br>`[Epic 3]` | **Pain Point 3**<br>매번 반려견 정보 재입력 번거로움 및 피로도 누적 | Long-term Memory Cache,<br>LangGraph System Context Injector | `GET /api/dogs/{id}/profile`<br>`POST /api/dogs/{id}/profile` | `users/{uid}/dogs`,<br>`walk_history` | TASK-06-1, TASK-06-2,<br>TASK-06-3, TASK-06-4 | Sprint 1<br>(Week 2) | 3 pt | 22 h | Member E, A |
+| **US-14** | 나만의 코스(즐겨찾기) 보관<br>`[Epic 3]` | **Pain Point 3**<br>만족스러웠던 산책 코스를 재탐색 없이 즉시 재방문 | Favorites Manager & UI Component | `POST /api/walks/{id}/favorite`<br>`GET /api/favorites` | `users/{uid}/favorites`<br>(Security Rules) | TASK-14-1, TASK-14-2 | Sprint 2<br>(Week 3~4) | 2 pt | 12 h | Member D, E |
 | **US-07** | 지도 기반 추천 경로 시각화 & 회전 안내<br>`[Epic 4]` | **Pain Point 1**<br>어디가 흙길이고 어디가 아스팔트인지 시각적 구분 불가 | React Native Maps Polyline 분기 렌더링,<br>OSRM Turn Step Parser | (Client 렌더링 모듈) | (GeoJSON FeatureCollection) | TASK-07-1, TASK-07-2,<br>TASK-07-3, TASK-07-4 | Sprint 2<br>(Week 3) | 5 pt | 26 h | Member D |
 | **US-08** | 핸즈프리 음성 길 안내 및 선호 노면 달성률<br>`[Epic 4]` | **Pain Point 4**<br>리드줄 잡은 채 폰 화면 응시 위험, 산책 몰입 방해 | Android Foreground Service,<br>expo-speech TTS, 노면 달성률 계산기 | `POST /api/walks/complete` | `walk_history`<br>(green_ratio, path) | TASK-08-1, TASK-08-2,<br>TASK-08-3, TASK-08-4 | Sprint 2<br>(Week 3) | 5 pt | 26 h | Member D, C |
 | **US-09** | 안심 코스 커뮤니티 피드 공유 & 피드백<br>`[Epic 4]` | **Pain Point 2, 4**<br>동네 이웃 간 검증된 코스 공유 및 리뷰 부재 | Community Feed UI, Rating Form,<br>Geo-Masking Blur Engine | `GET /api/community/feed`<br>`POST /api/walks/{id}/feedback` | `walk_history`, `feedback` | TASK-09-1, TASK-09-2,<br>TASK-09-3 | Sprint 2<br>(Week 3~4) | 3 pt | 16 h | Member D, E |
@@ -61,7 +61,7 @@ graph LR
 |---|---|---|---|---|
 | **1. AI Agent (필수)** | LangGraph 기반 ReAct 의도 분석 및 자율 도구 호출 엔진 (`StateGraph`, Pydantic V2) | **US-01, US-02, US-16** | TASK-01-1, 01-2, 01-3, 02-3, 16-1 | - 모의 자연어 발화 10종 추출 정확도 100%<br>- 필수 인자 누락 시 되물음(Clarification) 대화 루프 |
 | **2. 멀티모달 AI (필수 택1)** | Gemini 1.5 Flash 기반 공원 안내판 및 완주 후기 노면 사진 비전 분석기 | **US-04, US-05** | TASK-04-1, 04-2, 04-3, 05-1, 05-2 | - 테스트베드 안내판 15장 기준 파싱 정확도 85% 이상<br>- 후기 사진 신뢰도 0.85 이상 시 지도 영구 갱신 |
-| **3. Long-term Memory (필수 택1)** | Supabase PostgreSQL 기반 반려견 프로필, 관절 상태, 직전 산책 피드백 동적 인젝션 | **US-06, US-14** | TASK-06-1, 06-2, 06-3, 06-4, 14-1 | - 최근 5회 산책 요약 및 기피 노면 피드포워드 가중치 자동 강화<br>- 즐겨찾기 북마크 즉시 로딩 |
+| **3. Long-term Memory (필수 택1)** | Firebase Cloud Firestore 기반 반려견 프로필, 관절 상태, 직전 산책 피드백 동적 인젝션 | **US-06, US-14** | TASK-06-1, 06-2, 06-3, 06-4, 14-1 | - 최근 5회 산책 요약 및 기피 노면 피드포워드 가중치 자동 강화<br>- 즐겨찾기 북마크 즉시 로딩 |
 | **4. 자동화 워크플로우 (필수 택1)** | n8n 노코드 자동화 파이프라인 (기상청 API 수집 $\to$ 지면열 산출 $\to$ 웹 푸시/디스코드 발송) | **US-12** | TASK-12-1, TASK-12-2, TASK-12-3 | - 7일 연속 무중단 스케줄러 자동 실행<br>- 지면 온도 35℃ 이하 최적 골든타임 30분 전 알림 |
 | **5. 실제 사용자 테스트 (최소 5명)** | 소형견/대형견/노령견/일반견 등 5개 페르소나 견주 CBT 및 피드백 기반 $W_{\text{pref}}$ 강화 | **US-11** | TASK-11-1, TASK-11-2, TASK-11-3, TASK-11-4 | - 5인 실 필드 산책 완주 설문 데이터 수집<br>- 선호 노면 할인 계수 튜닝 (0.5 $\to$ 0.35) 반영 완료 |
 | **6. 서비스 외부 배포 (필수)** | Expo EAS Build (Android APK) + EAS Update(OTA) 무선 배포 및 Render 백엔드 배포 | **US-10** | TASK-10-1, TASK-10-2, TASK-10-3 | - APK 1회 배포 후 OTA 실시간 무선 업데이트<br>- 백엔드 HTTPS / CORS 도메인 격리 완료 |
@@ -77,7 +77,7 @@ graph LR
 | **NFR-01** | 성능 (응답성) | 루프 산책 경로 생성 시간 **2.0초 이내** | ORS/OSRM Provider 어댑터, GeoPandas 인덱스 최적화 및 NetworkX 인메모리 그래프 캐싱 | **TASK-03-4**: 100회 무작위 좌표 루프 생성 벤치마크 테스트 |
 | **NFR-02** | 전력 및 지속성 | 스마트폰 화면 꺼짐 상태에서도 GPS 추적 중단 없음 (배터리 소모 1시간당 12% 이내) | Android Foreground Service 지속 실행, Geolocation Dead Reckoning 링크 스냅 | **TASK-08-1**: 60분 필드 산책 백그라운드 위치 유지 및 배터리 잔량 측정 |
 | **NFR-03** | AI 비전 신뢰성 | 공원 종합안내판 파싱 정확도 **85% 이상**, 사진 처리 지연시간 **2.5초 이내** | Gemini 1.5 Flash Few-shot 프롬프트, JSON Strict Schema, 저조도/왜곡 전처리 | **TASK-04-4, TASK-05-3**: 15장 테스트베드 사진 자동 채점 파이프라인 |
-| **NFR-04** | 오프라인 가용성 | 통신 음영 지역(공원 내부) 진입 시 맵 렌더링 유지 및 산책 기록 보존 | AsyncStorage 기반 경로 GeoJSON 사전 캐싱, NetInfo 오프라인 체크인 큐 및 자동 동기화 | **TASK-15-1, TASK-15-2**: 비행기 탑승 모드 전환 후 산책 완료 시뮬레이션 |
+| **NFR-04** | 오프라인 가용성 | 통신 음영 지역(공원 내부) 진입 시 맵 렌더링 유지 및 산책 기록 보존 | Cloud Firestore 내장 Offline Persistence 및 로컬 벡터 타일 사전 캐싱, 재연결 자동 동기화 | **TASK-15-1, TASK-15-2**: 비행기 탑승 모드 전환 후 산책 완료 시뮬레이션 |
 | **NFR-05** | 개인정보 및 안전 | 견주 자택 위치 노출 방지(좌표 블러링), AI 의료 오인 방지 면책 고지 | 출발지 반경 100m 좌표 지오해시 마스킹, 앱 상단 고정 AI 면책 조항 배너 고지 | **TASK-09-3, TASK-10-3**: 커뮤니티 피드 조회 시 출발지 좌표 노출 여부 감사 |
 
 ---
@@ -103,17 +103,17 @@ graph LR
 | `GET` | `/api/weather/heat-risk` | 기상청 연동 지면열 산책 골든타임 조회 | **US-12** | Weather Heat Service (n8n) |
 | `GET` | `/api/parking/nearby` | 전국공영주차장 API 연계 P&R 거점 좌표 조회 | **US-13** | Spatial GIS Service |
 
-### 5.2 데이터베이스(ERD) 엔터티 추적
+### 5.2 데이터베이스(Cloud Firestore) 컬렉션 추적
 
-| Table Name | 주요 필드 및 역할 | 생성/수정 유저 스토리 | 참조 유저 스토리 |
+| Collection Path | 주요 문서 필드 및 역할 | 생성/수정 유저 스토리 | 참조 유저 스토리 |
 |---|---|:---:|:---:|
-| `users` | 사용자 계정, 거주 지역, 서비스 약관 동의 일시 | US-10 | US-01, US-06, US-09 |
-| `dogs` | 반려견 이름, 견종 체급, 나이, 관절 안심 케어 수준(0~4), 선호 노면 | US-06 | US-01, US-02, US-16 |
-| `osm_ways` | 도로 링크 ID, 지오메트리, 노면 타입(`surface`), 데이터 출처(`surface_source`) | US-03, US-05 | US-02, US-07, US-08 |
-| `walk_history` | 산책 경로 GeoJSON, 총 거리, 소요 시간, 흙길·잔디 달성률, 시작/종료 좌표 | US-08 | US-06, US-09, US-14 |
-| `feedback` | 산책 코스 평점(1~5), 후기 텍스트, 업로드 이미지 URL, 기피 노면 피드백 | US-09 | US-05, US-06 (가중치 피드포워드) |
-| `favorites` | 유저 ID, 코스 ID, 저장 일시 (사용자별 RLS 격리) | US-14 | US-07, US-14 |
-| `park_boards` | 공원명, 안내판 이미지 URL, 식별된 출입금지 구역 JSON, 검증 신뢰도 | US-04 | US-01, US-03 |
+| `users/{userId}` | 사용자 계정, 이메일, 닉네임, 서비스 약관 동의 일시 | US-10 | US-01, US-06, US-09 |
+| `users/{userId}/dogs/{dogId}` | 반려견 이름, 견종, 나이, 관절 안심 케어 수준(0~4), 기본 선호 노면 | US-06 | US-01, US-02, US-16 |
+| `walk_history/{walkId}` | 산책 경로 GeoJSON, 총 거리, 소요 시간, 흙길·잔디 달성률, 완료 일시 | US-08 | US-06, US-09, US-14 |
+| `walk_history/{walkId}/feedback/{feedbackId}` | 산책 코스 평점(1~5), 노면 일치 여부, 정성 후기 텍스트 | US-09 | US-05, US-06 (가중치 피드포워드) |
+| `community_feed/{feedId}` | 개인정보 마스킹(100~200m 지터링) 추천 코스, 평점, 코멘트, 추천수 | US-09 | US-09, US-14 |
+| `users/{userId}/favorites/{favId}` | 유저별 저장 코스 ID, 코스 별칭, 거리, 흙길 비율 (Security Rules 격리) | US-14 | US-07, US-14 |
+| `surface_reports/{reportId}` | 공원 안내판/후기 사진 Cloud Storage URL, 비전 인식 노면, 신뢰도, 출입금지구역 | US-04, US-05 | US-01, US-03 |
 
 ---
 
@@ -149,3 +149,4 @@ graph LR
 | **피드포워드 가중치 태스크** | 03, 05, 06 | US-06 AC3 구현 Task 누락 | **`TASK-06-4` (4h, Member A) 신설 및 반영 완료** | ✅ **완료** |
 | **US-03 허용 오차 튜닝 근거** | 03, 05 | Week 5의 $\pm 10\%$ 축소 언급과 기본 사양($\pm 15\%$) 충돌 | **기본 $\pm 15\%$ 유지, Week 5는 피드백 기반 튜닝으로 명시** | ✅ **완료** |
 | **문서 번호 체계 및 파일 경로** | docs 폴더 전체 | 상호 참조 링크 불일치 가능성 | **GitHub Style File Link(`file:///`) 전수 검증 및 통일** | ✅ **완료** |
+| **앱 백엔드 및 데이터베이스** | 01, 03, 04, 05, 06, 08 | Supabase(PostgreSQL/RLS) | **Firebase (Auth, Cloud Firestore NoSQL, Cloud Storage, Security Rules) 전 문서 전환 및 동기화** | ✅ **완료** |
