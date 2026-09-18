@@ -6,19 +6,19 @@
 * **목표**: 5주간 스크럼 기반 2개 스프린트 및 Hardening 기간을 통해 기획, 노면 가중치 순환 라우팅, 비전 멀티모달 위험 판독, 산책 기록/커뮤니티, n8n 자동화 파이프라인 구축 및 퍼블릭 클라우드 배포와 최소 5인 실사용자 CBT 완수.
 * **팀원별 역할 분담 (R&R)**:
   * **Member A (팀장 / AI Agent & Workflow Lead)**:
-    - LangGraph 기반 Walk Planning Agent 상태 머신 설계 및 ReAct 프롬프트 엔지니어링 (US-01, US-02)
+    - LangGraph 기반 Walk Planning Agent 상태 머신 설계 및 ReAct 프롬프트 엔지니어링 (US-01, US-02, US-16)
     - Pydantic V2 Strict Tool-calling 규격 수립, Long-term Memory 맥락 주입 및 전체 PM 총괄
   * **Member B (AI / Vision & Multimodal Lead)**:
     - Gemini 1.5 Flash 기반 노면 재질/위험물 진단 파이프라인(`SurfaceSafetyInspector`) 개발 (US-04)
     - Structured JSON 출력 스키마 고정, 노면 위험도 점수 연산 및 재탐색 피드백 핸들러 구현 (US-05)
   * **Member C (Backend & Spatial Routing Lead)**:
     - FastAPI 백엔드 구축 및 REST API 엔드포인트 구현 (SSE는 제외하고 예측 가능한 REST 구조 우선)
-    - OSM 노면 결측치 Fallback 추정 및 Routing API Provider 연동 기반 순환형(Loop) 라우터 도구 개발 (US-02, US-03, US-13)
+    - OSM 노면 결측치 Fallback 추정 및 Routing API Provider 연동 기반 순환형(Loop) 라우터 도구 개발 (US-02, US-03, US-13, US-16)
   * **Member D (Frontend & UI/UX Lead)**:
     - Next.js / Tailwind CSS 기반 반응형 모바일 웹 인터페이스 구축 (US-07)
-    - Mapbox GL JS 기반 노면별 색상 구분 Polyline 렌더링, 주머니 보관 연속 GPS 추적(Wake Lock/포켓 모드) 및 외부 지도 딥링크 UI 구현 (US-07, US-08, US-09)
+    - Mapbox GL JS 기반 노면별 색상 구분 Polyline 렌더링, 주머니 보관 연속 GPS 추적(Wake Lock/포켓 모드) 및 외부 지도 딥링크 UI 구현 (US-07, US-08, US-09, US-14, US-15)
   * **Member E (Infra, Automation & QA Lead)**:
-    - Supabase(PostgreSQL) 구조화 데이터 기반 Long-term Memory DB 및 Vercel/Render CI/CD 배포 자동화 (US-06, US-10)
+    - Supabase(PostgreSQL) 구조화 데이터 기반 Long-term Memory DB 및 즐겨찾기 스키마, Vercel/Render CI/CD 배포 자동화 (US-06, US-10, US-14)
     - n8n 기상청 지면열 연동 일일 산책 골든타임 알림 워크플로우 구축 (US-12)
     - **최소 5인 실사용자 CBT 운영, 피드백 수집 및 분석 리포트 총괄 (US-11)**
 
@@ -27,12 +27,13 @@
 ## 2. 스프린트 일정 개요 (5주 로드맵)
 
 ```
-[Sprint 1 (Week 1~2)] 코어 AI 파이프라인 & 라우팅 엔진 구축 (26 pt)
+[Sprint 1 (Week 1~2)] 코어 AI 파이프라인 & 라우팅 엔진 구축 (29 pt)
        │
-[Sprint 2 (Week 3~4)] 서비스 통합, 기록/커뮤니티, 배포 및 5인 CBT (24 pt)
+[Sprint 2 (Week 3~4)] 서비스 통합, 기록/커뮤니티/즐겨찾기, 배포 및 5인 CBT (28 pt)
        │
 [Hardening & Launch (Week 5)] 피드백 반영 고도화, 문서화 및 최종 데모 (5 pt)
 ```
+* **총 Story Points**: **62 pt** (Sprint 1: 29 pt, Sprint 2: 28 pt, Hardening: 5 pt)
 
 ---
 
@@ -63,12 +64,14 @@
   * **Member A (AI Agent)**:
     - Pydantic V2 Strict Schema 기반 자율 호출 도구 3종 바인딩 (`get_dog_context`, `generate_loop_route`, `analyze_surface_image`).
     - 선호 노면 파라미터가 누락되었을 때의 사용자 명확화 질문(Clarification) 대화 루프 구현.
+    - 목표 산책 시간(Target Duration) 칩/슬라이더 및 자연어 발화 파라미터 매핑 바인딩 (US-16).
   * **Member B (Vision AI)**:
     - `SurfaceSafetyInspector` 모듈 완성: `safety_score`(0~100), 노면 재질, 위험요소 파싱 (US-04).
     - 예외 처리: 저조도/흐린 사진 입력 시 신뢰도 부족 경고 및 재촬영 요청 로직 추가.
   * **Member C (Backend/GIS)**:
     - 사용자 선호 노면 할인 계수($W_{\text{pref}} = 0.4 \sim 0.5$) 및 페널티 계수 비용 함수 모듈 개발 (US-02).
     - 출발점 기준 다각형 경유지(Waypoint) 샘플링 및 Routing API(ORS/OSRM) 연동 순환 루프 코스 생성 모듈 구현 (US-03).
+    - 반려견 체급/건강상태별 보행 속도 매핑 기반 목표 보행 거리 자동 환산 엔진 및 $\pm 10\%$ 시간 수렴 라우터 검증 (US-16).
   * **Member D (Frontend)**:
     - 선호 노면 선택 칩 UI(흙길, 잔디길, 탄성포장, 보도블록) 및 에이전트 채팅 버블 컴포넌트 개발.
     - 카메라 촬영/이미지 업로드 컴포넌트 구현.
@@ -91,9 +94,11 @@
     - 추천 경로 Polyline 노면별 색상 분기 렌더링 (잔디: 초록, 흙: 갈색, 탄성포장: 주황, 아스팔트: 회색) (US-07).
     - Screen Wake Lock & 포켓 모드 기반 주머니 보관 중 GPS 연속 추적, 절전 복귀 시 스냅 보정 및 '선호 노면 달성률(%)' 카드 렌더링 (US-08).
     - 외부 네이버지도/카카오맵 도보 길찾기 바로가기 연동 버튼 추가 (US-07).
+    - 산책 경로 상세 및 완주 카드 내 북마크(나만의 코스) 원터치 토글 및 보관함 목록 UI 구현 (US-14).
   * **Member E (Infra/QA)**:
     - n8n 워크플로우 구현: 기상청 단기예보 조회 → 지면열 회귀 연산 → 35℃ 이하 골든타임 웹훅 알림 발송 (US-12).
     - 커뮤니티 피드 테이블 구축 및 산책 완주 기록 저장 연동 (US-09).
+    - 즐겨찾기(북마크) CRUD API (`POST /api/walks/{id}/favorite`, `GET /api/favorites`) 및 Supabase 테이블 연동 (US-14).
 
 ### Week 4 (Sprint 2 종료): 외부 클라우드 배포 & 실사용자 5인 CBT
 * **주간 목표**: 외부 접근 가능한 퍼블릭 배포 완료, 실사용자 5인 이상 섭외 및 필드 테스트 수행, 1차 피드백 수집.
@@ -106,6 +111,7 @@
     - Render / Cloud Run 프로덕션 환경 배포, 도메인 연결, CORS 설정 및 부하 테스트.
   * **Member D (Frontend)**:
     - Vercel 프로덕션 배포 완료 (모바일 PWA 메타태그 적용).
+    - PWA Service Worker 및 Cache API 기반 추천 경로 지도 타일 & GeoJSON 사전 캐싱, 오프라인 감지 토스트 및 IndexedDB 체크인 로컬 임시저장/온라인 재접속 동기화 모듈 개발 (US-15).
     - 인앱 사용자 만족도 평가 및 피드백 입력 모달 배포 (US-09, US-11).
   * **Member E (Infra/QA) [핵심 총괄]**:
     - **실사용자 CBT 운영 (US-11)**:

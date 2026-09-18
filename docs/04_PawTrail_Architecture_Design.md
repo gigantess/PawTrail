@@ -127,6 +127,8 @@ flowchart TB
 | `POST` | `/api/walks` | 산책 완주 기록 저장 (주머니 보관 연속 수신 & 스냅 보정) | In: `WalkRecordCreate` ➔ Out: `WalkRecordResponse` |
 
 | `GET` | `/api/walks/{id}` | 산책 기록 상세 조회 | Out: `WalkRecordDetail` |
+| `POST` | `/api/walks/{id}/favorite` | 안심 산책로 즐겨찾기(북마크) 토글 (추가/해제) | In: `FavoriteToggleRequest` ➔ Out: `FavoriteToggleResponse` |
+| `GET` | `/api/favorites` | 사용자 저장 즐겨찾기 코스 목록 조회 | Out: `List[FavoriteWalkSummary]` |
 | `POST` | `/api/feedback` | 산책 후 노면 만족도 및 피드백 저장 | In: `FeedbackCreate` ➔ Out: `FeedbackResponse` |
 | `GET/PUT` | `/api/dogs/{id}` | 반려견 프로필 조회 및 수정 | In/Out: `DogProfileDTO` |
 | `GET` | `/api/parking/nearby` | 출발지 인근 공영주차장 P&R 조회 | In: `lat, lon, radius` ➔ Out: `List[ParkingLot]` |
@@ -217,8 +219,10 @@ erDiagram
     USERS ||--o{ DOGS : owns
     USERS ||--o{ WALK_HISTORY : completes
     USERS ||--o{ SURFACE_REPORTS : reports
+    USERS ||--o{ FAVORITES : bookmarks
     DOGS ||--o{ WALK_HISTORY : participates
     WALK_HISTORY ||--o| FEEDBACK : receives
+    WALK_HISTORY ||--o{ FAVORITES : saved_as
 
     USERS {
         uuid id PK
@@ -266,6 +270,14 @@ erDiagram
         string detected_surface
         int safety_score
         string[] hazards
+        timestamp created_at
+    }
+
+    FAVORITES {
+        uuid id PK
+        uuid user_id FK
+        uuid walk_history_id FK
+        string title "나만의 코스 별칭"
         timestamp created_at
     }
 ```
