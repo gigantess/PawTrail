@@ -104,7 +104,7 @@ class TestWalkCheckInAndCbtFeedback:
             "dog_id": "dog-maltese-001",
             "surface_satisfaction_rating": 5,
             "surface_accuracy_match": True,
-            "comment": "흙길 비율이 높아 슬개골에 무리 없이 완주했습니다!"
+            "comment": "흙길 비율이 높아 관절에 무리 없이 편안하게 완주했습니다!"
         }
         checkin = WalkCheckInRequest(**payload)
         assert checkin.surface_satisfaction_rating == 5

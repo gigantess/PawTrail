@@ -9,7 +9,7 @@
 | 테스트 파일명 | 대상 사용자 스토리 (Story ID) | 주요 검증 내용 |
 |---|:---:|---|
 | [`test_surface_cost_model.py`](./test_surface_cost_model.py) | **US-02, US-03** | • 노면 비용 함수($\text{Cost} = \text{Length} \times W_{\text{base}} \times W_{\text{pref}}$)<br>• 선호 노면 할인(0.45) 및 아스팔트(2.5)/자갈(3.5) 페널티<br>• **환경부 세분류 토지피복지도(SHP) 공간 결합 및 5단계 출처 투명성(`surface_source`)** 검증<br>• 순환(Loop) 경로 시작/종료점 일치 및 선호 노면 점유율 $\ge 50\%$ |
-| [`test_walk_plan_agent_schema.py`](./test_walk_plan_agent_schema.py) | **US-01, US-06** | • Pydantic V2 산책 생성 요청 엄격 검증(시간 5~120분, 좌표 유효범위)<br>• 필수 파라미터 누락 시 Clarification(되물음) 트리거<br>• 반려견 건강 프로필(슬개골 탈구 단계) 및 롱텀 메모리 주입 |
+| [`test_walk_plan_agent_schema.py`](./test_walk_plan_agent_schema.py) | **US-01, US-06** | • Pydantic V2 산책 생성 요청 엄격 검증(시간 5~120분, 좌표 유효범위)<br>• 필수 파라미터 누락 시 Clarification(되물음) 트리거<br>• 반려견 건강 프로필(관절 안심 케어 수준) 및 롱텀 메모리 주입 |
 | [`test_loop_target_duration.py`](./test_loop_target_duration.py) | **US-16** | • **[US-16] 사용자 지정 산책 시간(Target Duration) 기반 맞춤 코스 생성**<br>• 15분, 30분, 45분 시간대별 및 견종 체급별 목표 거리($D = V \times T$) 산출<br>• 목표 거리 대비 **오차 ±10% 이내 2개 이상 순환 루프 코스 생성** 검증<br>• `POST /api/walks/plan` 페이로드 시간 제약(10~90분) 유효성 검증 |
 | [`test_vision_safety_inspector.py`](./test_vision_safety_inspector.py) | **US-04, US-05** | • **[US-04] 공원 종합안내판 비전 판독(`ParkBoardInspectionResult`)**: 반려견 출입 금지 구역 및 흙길 범례 파싱<br>• **[US-05] 완주 후기 사진 비전 검증(`SurfaceEnrichmentResult`)**: 신뢰도 $\ge 0.85$ 시 지도 영구 보강 및 미달 시 격리<br>• 저조도/각도 왜곡 사진 재촬영 안내 플래그 |
 | [`test_walk_tracking_and_feedback.py`](./test_walk_tracking_and_feedback.py) | **US-08, US-09, US-11, US-15** | • 산책 완주 후 이동 거리 대비 선호 노면 달성률(%) 계산<br>• 산책 완료 체크인 스키마 및 만족도(1~5점) 검증<br>• 5인 CBT 피드백 기반 가중치 재조정 플래그 평가<br>• 오프라인 체크인 IndexedDB 로컬 큐 동기화 |

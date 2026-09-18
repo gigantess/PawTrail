@@ -14,10 +14,11 @@
      - `generate_loop_route`: Routing API Provider 호출 및 최적 순환 경로 도출
      - `analyze_surface_image`: 현장 노면 이미지 시각적 위험 판독 (Gemini Flash)
      - `search_parking`: 출발지 인근 공영주차장 P&R 거점 조회
-   - 모바일 웹 환경의 OS 제약(Safari, Chrome 백그라운드 GPS 차단)을 극복하기 위해, **Screen Wake Lock API와 포켓 모드(초절전 화면 유지)를 통해 주머니 보관 시에도 GPS 수신을 지속**하며, 절전 복귀 시 **추천 경로 스냅 보정(Dead Reckoning)** 및 **외부 지도 딥링크 + 산책 완료 체크인 루프**를 구축합니다.
+   - **시선 해방(Eyes-Free) & 두 손 자유(Hands-Free) 백그라운드 음성 길 안내**: 한 손에 리드줄을 잡고 스마트폰 화면을 보며 걷는 위험을 배제하기 위해, **React Native (Expo SDK 51+) 및 Android Foreground Service(`expo-location`) + `expo-speech` TTS**를 기반으로 주머니 속에서도 턴과 노면 변경("50m 앞 부드러운 흙길입니다. 우회전하세요")을 음성 브리핑합니다.
+   - 테스터 재설치 피로를 없애기 위해 **단 1회 Android APK 빌드(EAS Build) 후 GitHub Actions 연계 EAS Update(무선 OTA)**를 통해 신속한 무선 패치를 지속 제공합니다.
    - 복잡한 양방향 SSE 스트리밍 디버깅에 갇히지 않고, **안정적인 REST API 구조**를 우선 완성하여 3주차 조기 배포 및 5인 CBT(클로즈드 베타 테스트) 피드백 튜닝에 집중합니다.
 3. **[배포 및 외부 인프라 자율성 제한]**:
-   - Vercel, Render, Cloud Run, Supabase 프로덕션 DDL 배포, n8n 프로덕션 웹훅 트리거 등 외부 서비스 반영 명령어는 **사용자의 명시적 요청이나 사전 승인 없이 임의로 자동 실행하지 않으며**, 필요한 경우 안전한 스크립트나 가이드만 제공합니다.
+   - EAS Build, EAS Update, Render, Cloud Run, Supabase 프로덕션 DDL 배포, n8n 프로덕션 웹훅 트리거 등 외부 서비스 반영 명령어는 **사용자의 명시적 요청이나 사전 승인 없이 임의로 자동 실행하지 않으며**, 필요한 경우 안전한 스크립트나 가이드만 제공합니다.
 4. **[검증 신뢰성]**: 가짜 테스트 통과 보고나 가정에 기반한 결과를 제공하지 않으며, 실제 실행 결과 및 반환 데이터를 기반으로 보고합니다.
 5. **[YAGNI & No Spec Creep (요청하지 않은 기능 추가 절대 금지)]**:
    - 기획서(`docs/01_PawTrail_Project_Proposal.md`) 및 애자일 사용자 스토리(`docs/03_PawTrail_Agile_User_Stories.md`, 13개 스토리 / 55pt)에 정의되지 않은 불필요한 기능, 더미 컴포넌트, 미확정 로직을 임의로 생성하지 않습니다.
@@ -35,10 +36,10 @@
 
 ## [핵심 원칙 1] 프로젝트 아키텍처 및 시스템 일관성 (Project-Wide Consistency)
 
-PawTrail은 **Next.js 모바일 웹(Frontend) + FastAPI(Backend) + LangGraph / Gemini Flash(AI) + Supabase(Database & Memory) + n8n(Automation)** 구조로 구성됩니다. 코드 제안 시 각 계층의 설계 규격을 준수해야 합니다.
+PawTrail은 **React Native Expo 모바일 앱(Frontend) + FastAPI(Backend) + LangGraph / Gemini Flash(AI) + Supabase(Database & Memory) + EAS Update & n8n(Automation)** 구조로 구성됩니다. 코드 제안 시 각 계층의 설계 규격을 준수해야 합니다.
 
-### 1. 프론트엔드 (Next.js / React / Tailwind CSS / Mapbox GL JS)
-- **컴포넌트 설계**: 모바일 반응형 뷰포트를 기본으로 하며, 컴포넌트는 단일 책임 원칙(SRP)에 따라 모듈화합니다.
+### 1. 프론트엔드 (React Native / Expo SDK 51+ / TypeScript / React Native Maps)
+- **컴포넌트 설계**: 모바일 네이티브 반응형 뷰포트를 기본으로 하며, 컴포넌트는 단일 책임 원칙(SRP)에 따라 모듈화합니다.
 - **노면별 표준 색상 규격 (Polyline & Badge)**:
   - **잔디길 (Grass)**: 초록색 (`#10B981`, Green-500)
   - **흙길 (Dirt/Ground)**: 갈색/어스톤 (`#92400E`, Amber-800 / `#B45309`)
@@ -46,8 +47,10 @@ PawTrail은 **Next.js 모바일 웹(Frontend) + FastAPI(Backend) + LangGraph / G
   - **보도블록 (Paved)**: 파란/인디고톤 (`#3B82F6`, Blue-500)
   - **아스팔트 (Asphalt - 경고/기피)**: 짙은 회색 (`#6B7280`, Gray-500)
   - **위험 노면 (Gravel/Hazard)**: 빨간색 (`#EF4444`, Red-500)
-- **지도 인스턴스 관리**: 컴포넌트 언마운트 시 Mapbox 지도 인스턴스 및 이벤트 리스너를 반드시 `map.remove()`로 메모리 해제하여 누수를 방지합니다.
-- **외부 네비게이션 연동**: 모바일 네이버지도 / 카카오맵 도보 길찾기 URL 스킴(딥링크) 포맷 규격을 준수합니다.
+- **Eyes-Free & Hands-Free 음성 길 안내 엔진**:
+  - Android Foreground Service(`expo-location`)를 통한 백그라운드 GPS 위치 추적.
+  - OSRM `steps[].instruction` 및 링크 노면 속성 결합 `expo-speech` 음성 브리핑(턴 30m 전 알림, 경로 이탈 경고).
+- **무선 업데이트 준수**: 1회 Android APK 배포 후 모든 런타임 코드/스타일 수정은 EAS Update(OTA) 파이프라인과 완벽히 호환되도록 네이티브 바이너리 변경을 최소화합니다.
 
 ### 2. 백엔드 (FastAPI / Python)
 - **Pydantic V2 기반 엄격한 스키마 검증**: 모든 API 요청/응답은 Pydantic V2 BaseModel을 정의하여 입출력 데이터 무결성을 보장합니다.
@@ -114,12 +117,12 @@ $$\text{Cost}(e) = \text{Length}(e) \times W_{\text{base}}(\text{surface}(e)) \t
 
 ## [핵심 원칙 3] 모바일 웹 최적화 및 5인 CBT 안정성 보장
 
-1. **[주머니 보관 시 GPS 기록 유지 및 선제 방어]**:
-   - 모바일 브라우저가 주머니 속에서 슬립 모드로 전환되는 것을 방지하기 위해 **Screen Wake Lock API와 포켓 모드(초절전 락스크린)**를 활성화하여 고정밀 위치 추적을 지속합니다.
-   - OS 정책상 일시적 수신 지연이 발생하더라도, 화면 복귀 시 이전 수신 좌표와 복귀 좌표 간 **추천 경로 도로망 스냅 보정(Dead Reckoning)**을 수행하여 거리 및 궤적 손실을 완벽히 방어합니다.
+1. **[주머니 보관 시 백그라운드 음성 안내 및 GPS 기록 유지]**:
+   - Android Foreground Service를 통해 스마트폰 화면이 꺼진 상태에서도 고정밀 GPS 수신 및 `expo-speech` TTS 음성 길 안내를 중단 없이 지속합니다.
+   - 일시적 수신 지연이나 GPS 튐이 발생하더라도 추천 경로 도로망 스냅 보정(Dead Reckoning)을 수행하여 거리 및 궤적 손실을 방어합니다.
 
 2. **[실사용자 5인 CBT 시나리오 호환성 (US-11)]**:
-   - Tester 1: 소형견(슬개골 탈구) ➔ 흙/잔디길 고가중치 반영
+   - Tester 1: 소형견(관절 안심 케어견) ➔ 흙/잔디길 고가중치 및 핸즈프리 음성 안내 반영
    - Tester 2: 대형견 ➔ 주차장(P&R) 출발 코스 연계
    - Tester 3: 노령견 ➔ 탄성포장/흙길 + 경사도 완만 코스
    - Tester 4: 일반 보행 ➔ 노면 사진 촬영 제보 및 우회 리라우팅
@@ -190,11 +193,15 @@ $$\text{Cost}(e) = \text{Length}(e) \times W_{\text{base}}(\text{surface}(e)) \t
    - 위치 좌표는 산책 경로 분석 및 통계 목적에 필요한 범위로만 최소 수집 및 저장합니다.
 
 2. **[AI 윤리 및 의료 진단 배제 (Medical Disclaimer)]**:
-   - 슬개골 탈구, 관절 질환 등 반려견 건강 정보는 질병을 진단·치료하는 의료 행위가 아니며, 견주가 입력한 신체 조건을 고려한 **"산책 경로 추천 조건"**으로만 엄격히 제한합니다.
+   - 관절 안심 케어 등 반려견 건강 정보는 질병을 진단·치료하는 의료 행위가 아니며, 견주가 입력한 신체 조건을 고려한 **"산책 경로 추천 조건"**으로만 엄격히 제한합니다.
    - 서비스 내 상시 고지 문구를 필수 노출합니다:
      > *"본 서비스의 AI 분석 및 추천은 안전한 산책을 돕기 위한 참고 정보이며 수의학적 진단이 아닙니다. 실제 보행 시 현장 상황에 유의하시기 바랍니다."*
 
-3. **[백엔드 보안 표준]**:
+3. **[앱 실행 시 질병 용어 전면 배제 및 긍정적 웰니스 UX 준수 (엄격)]**:
+   - 앱 화면 UI, 온보딩, TTS 음성 안내 스크립트, AI 프롬프트 전역에서 '슬개골 탈구', '질환 단계' 등 임상적/의학적 질병 명칭 노출을 엄격히 금지합니다.
+   - 대신 "폭신한 길", "관절 안심 케어", "부드러운 잔디/흙길", "편안한 발걸음" 등 긍정적 웰니스 용어로 통일합니다. (※ 의학 통계 및 질환 메커니즘은 투자 유치/심사용 발표 자료에만 제한적으로 유지)
+
+4. **[백엔드 보안 표준]**:
    - Gemini API Key 및 Supabase Service Key 등 민감 인증 정보는 코드에 절대 하드코딩하지 않고 환경변수(`.env`)로 격리 관리합니다.
    - 이미지 파일 업로드 시 확장자, MIME 타입, 파일 크기(최대 10MB)를 서버 측에서 엄격히 검증합니다.
    - 예외 발생 시 시스템 내부 스택 트레이스나 Secret이 클라이언트에 노출되지 않도록 정제된 에러 응답(`HTTPException`)을 반환합니다.
@@ -248,8 +255,8 @@ PawTrail 팀의 병렬 개발 생산성과 코드베이스 무결성을 유지�
 Gemini는 코드를 제안하거나 수정할 때 다음 6단계를 내부적으로 검증한 후 답변을 출력합니다.
 
 1. **[목적 검증]**: 이 코드가 PawTrail의 사용자 스토리(US-01~US-16) 및 기획 의도와 완벽히 부합하며, 불필요한 오버엔지니어링(YAGNI)을 배제했는가?
-2. **[아키텍처 검증]**: Next.js(TypeScript) / FastAPI(Python Pydantic V2) / LangGraph / Supabase 모듈 간 규격 및 노면 가중치 비용 공식과 일치하는가?
+2. **[아키텍처 검증]**: React Native Expo(TypeScript) / FastAPI(Python Pydantic V2) / LangGraph / Supabase 모듈 간 규격 및 노면 가중치 비용 공식과 일치하는가?
 3. **[품질/안정성/복잡도 검증]**: SonarLint 규칙(단일 파일 250라인 이하, 함수 40라인 이하, 인지 복잡도 10 이하, 중첩 삼항연산 금지, 미사용 코드 제거)을 통과했는가? 초과 시 선제적 리팩토링을 권고했는가?
 4. **[테스트 동기화 검증 (필수)]**: 사용자 스토리나 Task의 변경사항이 테스트케이스(인수조건 검증, 스키마, Fixture, 기대값)에 빠짐없이 반영·갱신되었으며, 전수 테스트를 통과했는가?
-5. **[사용자 경험 검증]**: 로딩, 에러, 빈 상태가 처리되었고, 노면 색상 규격과 외부 지도 딥링크 등 야외 실사용성이 충족되었는가?
+5. **[사용자 경험 검증]**: 로딩, 에러, 빈 상태가 처리되었고, 노면 색상 규격과 음성 길 안내 등 야외 실사용성이 충족되었으며 질병 용어가 배제되었는가?
 6. **[협업 및 형상관리 검증]**: 작업 내용이 독립된 feature 브랜치 단위로 격리되어 있으며, MR 생성을 위한 커밋 메시지 규격과 사전 테스트 통과 조건을 충족했는가?

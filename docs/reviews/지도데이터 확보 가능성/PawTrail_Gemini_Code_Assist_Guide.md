@@ -67,7 +67,7 @@ class SurfaceSourceType(str, Enum):
 class DogProfile(BaseModel):
     breed: str
     weight_kg: float
-    patella_luxation_stage: int = Field(ge=0, le=4, description="슬개골 탈구 단계 0~4")
+    joint_care_level: int = Field(default=0, ge=0, le=4, description="관절 안심 케어 수준 0~4")
     preferred_surfaces: List[SurfaceType]
 
 class WalkPlanRequest(BaseModel):

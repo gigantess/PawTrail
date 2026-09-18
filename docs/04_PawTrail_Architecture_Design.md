@@ -12,12 +12,14 @@
    - 원시 위성 영상의 무거운 CV 세그멘테이션(U-Net/SAM)이나 지리 알고리즘을 바닥부터 재발명하지 않고, **환경부 토지피복지도(Land Cover Map) 세분류 벡터 레이어와의 공간 결합(Spatial Join)** 및 검증된 라우팅 엔진(OpenRouteService)을 LangGraph Agent의 도구(`@tool`)로 배치하여 0.1초 만에 흙/잔디 비중이 극대화된 Waypoint를 자율 결정합니다.
 2. **실용적인 비전 AI 피벗 (Pragmatic Vision AI)**:
    - 산책 중 리드줄을 잡고 발밑 1~2m를 촬영해 실시간 우회로를 찾는 비현실적 UX를 과감히 배제하고, **공원 입구 종합안내판 사전 판독(`ParkBoardInspector`)** 및 **산책 완주 후 커뮤니티 노면 제보 검증(`CommunityMapEnricher`)**을 통해 지도의 결측을 영구 보정하는 지속 가능한 데이터 선순환을 완성합니다.
-3. **안정적인 계층형 분리 (Decoupled Layered Architecture)**:
-   - 프론트엔드(Next.js 모바일 웹)와 백엔드(FastAPI)를 명확한 REST API로 분리하여 복잡한 실시간 스트리밍 디버깅 병목을 줄이고 3주 차 조기 배포를 지원합니다.
+3. **안정적인 계층형 분리 및 네이티브 확장 (Decoupled Layered Architecture & Native Extension)**:
+   - 프론트엔드(React Native Expo 앱)와 백엔드(FastAPI)를 명확한 REST API로 분리하여 복잡한 실시간 스트리밍 디버깅 병목을 줄이고, EAS Update(OTA) 및 단 1회 Android APK 배포 체계로 3주 차 조기 배포를 지원합니다.
 4. **엄격한 스키마 기반 데이터 무결성 (Schema-First Contract)**:
    - 모든 데이터 교환은 Pydantic V2 BaseModel 및 TypeScript Type Contract를 기반으로 검증하여 런타임 결함을 원천 방지합니다.
-5. **현장 실사용 중심의 Fallback & 딥링크 (Pragmatic Mobile UX)**:
-   - 모바일 브라우저의 백그라운드 제약을 인정하고, **Screen Wake Lock API 기반 포켓 모드** 및 **상용 지도(네이버/카카오) 딥링크 바로가기**를 채택하여 현장 보행 편의성을 극대화합니다.
+5. **시선 해방(Eyes-Free) & 두 손 자유(Hands-Free) 백그라운드 음성 길 안내 (Turn & Surface Voice Navigation)**:
+   - 한 손에 리드줄을 쥐고 다른 손으로 스마트폰을 계속 보며 걷는 위험한 시각 의존 UX를 탈피합니다. Android Foreground Service 기반의 백그라운드 위치 추적(`expo-location`)과 OSRM 회전 안내 및 노면 속성을 결합한 음성 합성(`expo-speech` TTS)을 채택하여 스마트폰을 주머니나 크로스백에 넣고 화면을 끈 상태에서도 *"50m 앞 부드러운 흙길입니다. 우회전하세요"*와 같은 안내를 제공합니다.
+6. **질병 용어 배제 및 긍정적 웰니스 UX 원칙 (Wellness Terminology Policy)**:
+   - '슬개골 탈구', '질환 단계' 등 견주에게 불안감과 심리적 피로를 주는 임상/의학적 용어는 앱 실행 화면, 온보딩, 음성 안내 스크립트, AI 프롬프트에서 전면 배제합니다. 대신 "폭신한 길", "관절 안심 케어", "부드러운 잔디/흙길" 등 긍정적인 웰니스 케어 언어로 순화하여 일상 산책의 즐거움을 극대화합니다. (의학 통계는 투자 심사용 발표 자료에만 제한적으로 활용)
 
 ---
 
@@ -25,11 +27,12 @@
 
 ```mermaid
 flowchart TB
-    subgraph Client["[Client Tier] Next.js Mobile Web / PWA"]
-        UI[UI Components & 칩 선택 인터페이스]
-        MapModule[Mapbox GL JS 렌더러 & 노면 색상 Polyline]
-        CameraModule[공원 안내판 / 완주 노면 제보 카메라]
-        NaviDeepLink[외부 지도 네이버/카카오 딥링크]
+    subgraph Client["[Client Tier] React Native Mobile App (Expo SDK 51+)"]
+        UI[UI Components & 칩 선택 인터페이스<br/>(웰니스 노면 & 관절 안심 케어)]
+        MapModule[React Native Maps & 노면 색상 Polyline]
+        NaviEngine[Hands-Free Voice Navi Engine<br/>expo-location Foreground Service + expo-speech]
+        CameraModule[공원 안내판 / 완주 노면 제보 카메라 (expo-camera)]
+        EASModule[EAS Update OTA 클라이언트]
     end
 
     subgraph Gateway["[API Gateway & Backend] FastAPI"]
@@ -69,6 +72,7 @@ flowchart TB
     %% 연결 흐름
     UI --> Router
     MapModule <--> Router
+    NaviEngine <--> Router
     CameraModule --> Router
     Router --> Validator --> Auth
     Auth --> Agent
@@ -100,25 +104,27 @@ flowchart TB
 ## 3. 계층별 상세 아키텍처
 
 ### 3.1 클라이언트 계층 (Frontend Tier)
-* **프레임워크**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS
+* **프레임워크**: React Native (Expo SDK 51+), TypeScript, React Native Maps, expo-location, expo-speech, expo-camera
 * **주요 구성요소**:
   1. **Planner Screen**:
-     - 반려견 선택 드롭다운, 목표 산책 시간 슬라이더(15~120분), 선호 노면 선택 칩(흙길/잔디/우레탄/보도블록).
-  2. **Mapbox Route Viewer**:
+     - 반려견 선택 드롭다운, 관절 안심 케어 수준 및 웰니스 기본 설정 표시, 목표 산책 시간 슬라이더(15~120분), 선호 노면 선택 칩(폭신한 흙길/부드러운 잔디/탄성포장/보도블록). (※ 슬개골 탈구 등 질병 용어 전면 배제)
+  2. **Map Route Viewer (React Native Maps)**:
      - GeoJSON 기반 구간별 노면 속성 분기 렌더링:
        - 🌿 잔디: `#10B981` (Green-500)
        - 🍂 흙길: `#B45309` (Amber-700)
        - 🏃 탄성포장: `#F97316` (Orange-500)
        - 🏢 보도블록: `#3B82F6` (Blue-500)
-       - ⚠️ 아스팔트/위험: `#6B7280` (Gray-500) / `#EF4444` (Red-500)
-  3. **Pocket Tracking & Wake Lock Controller**:
-     - `navigator.wakeLock.request('screen')`을 통한 주머니 보관 중 화면 꺼짐 및 절전 방지.
-     - 초절전 포켓 모드(다크 락스크린) 및 OS 절전 복귀 시 추천 경로 도로망 스냅 보정(Dead Reckoning).
-  4. **Navi Launcher (Fallback)**:
-     - 네이버 지도 앱(`nmap://route/walk`) 및 카카오맵(`kakaomap://route`) 도보 길찾기 URL 스킴 바로가기.
-  5. **Camera Modal (안내판 & 노면 제보)**:
+       - ⚠️ 아스팔트/일반도로: `#6B7280` (Gray-500) / `#EF4444` (Red-500)
+  3. **Eyes-Free & Hands-Free 백그라운드 음성 길 안내 엔진 (Voice Navigation Engine)**:
+     - Android Foreground Service + `expo-location`을 통한 백그라운드 고정밀 GPS 추적 (스마트폰이 주머니나 가방에 있고 화면이 꺼진 상태에서도 연속 유지).
+     - OSRM/ORS `steps[].instruction` 턴 정보 및 링크별 `surface` 속성 결합.
+     - `expo-speech` TTS 기반 턴 및 노면 변경 안내 (*"50m 앞 부드러운 흙길입니다. 우회전하세요"*, *"포장 도로 구간이 시작됩니다. 보폭을 늦춰주세요"*).
+     - 30m 반경 턴 도달 알림(소프트 비프음 + 음성) 및 경로 이탈(Off-route) 감지 시 재탐색 음성 알림.
+  4. **Camera Module (안내판 & 노면 제보)**:
      - 공원 입구 오프라인 안내판 촬영 ➔ `POST /api/walks/inspect-board` 전송.
      - 산책 완주 후 노면 제보 사진 촬영 ➔ WebP 압축 ➔ `POST /api/walks/verify-surface` 전송.
+  5. **EAS Update OTA 수신기**:
+     - 앱 시작 시 원격 번들 체크 및 무선 무점검 자동 패치 적용 (1회 Android APK 설치 후 지속 업데이트).
 
 ---
 
@@ -274,7 +280,7 @@ erDiagram
         string breed
         int age
         float weight_kg
-        int patella_luxation_stage "슬개골 탈구 단계 0~4"
+        int joint_care_level "관절 안심 케어 수준 0~4"
         string[] default_preferred_surfaces "기본 선호 노면"
     }
 
@@ -324,12 +330,13 @@ erDiagram
 
 ## 4. 핵심 시퀀스 워크플로우 (Sequence Diagrams)
 
-### 4.1 맞춤형 산책로 생성 및 외부 길찾기 플로우
+### 4.1 맞춤형 산책로 생성 및 핸즈프리 음성 길 안내 플로우
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 견주 (Mobile Web)
-    participant Front as Next.js Frontend
+    actor User as 견주 (React Native Expo)
+    participant Front as Expo App (Frontend)
+    participant Navi as Voice Navi Engine (Foreground Service)
     participant API as FastAPI Backend
     participant Agent as LangGraph Agent
     participant Mem as Supabase Memory
@@ -338,18 +345,27 @@ sequenceDiagram
     User->>Front: 선호 노면 선택(흙/잔디) & 20분 코스 요청
     Front->>API: POST /api/walks/plan
     API->>Agent: Run WalkPlanningGraph(input)
-    Agent->>Mem: 견공 건강 프로필 & 최근 5회 산책 이력 조회
-    Mem-->>Agent: 슬개골 2기, 아스팔트 기피, 흙길 선호 맥락 주입
+    Agent->>Mem: 견공 프로필 (관절 안심 케어 2레벨, 부드러운 노면 선호) 조회
+    Mem-->>Agent: 관절 보호 우선, 폭신한 흙/잔디길 최대화 맥락 주입
     Agent->>RouterTool: generate_loop_route(origin, surfaces=['dirt','grass'], dur=20m)
-    RouterTool-->>Agent: GeoJSON 경로 + 노면 통계 반환
+    RouterTool-->>Agent: GeoJSON 경로 + 회전(steps) + 노면 통계 반환
     Agent-->>API: 최적 경로 및 AI 추천 코멘트
-    API-->>Front: WalkPlanResponse (GeoJSON + 메타데이터)
-    Front->>User: 지도 위 노면 색상 Polyline 프리뷰 렌더링
+    API-->>Front: WalkPlanResponse (GeoJSON + 턴/노면 안내 steps)
+    Front->>User: 지도 위 노면 색상 Polyline 및 코스 요약 프리뷰
     
-    opt 외부 지도 네비게이션 사용
-        User->>Front: [네이버지도/카카오맵 도보 길찾기] 클릭
-        Front->>User: 지도 앱 딥링크 호출 (출발지/도착지 파라미터 전달)
+    User->>Front: [핸즈프리 산책 시작] 탭 ➔ 스마트폰 주머니 보관 (화면 Off)
+    Front->>Navi: Start Android Foreground Service (GPS + TTS 활성화)
+    Navi-->>User: (TTS 음성 안내) "포트레일 산책을 시작합니다. 50m 앞 부드러운 흙길입니다. 우회전하세요."
+    
+    loop 백그라운드 실시간 보행 (화면 꺼짐 상태)
+        Navi->>Navi: Foreground Service GPS 주기적 수신 & 경로 스냅
+        opt 턴 또는 노면 변경 지점 30m 전 도달
+            Navi-->>User: (TTS 음성 안내) "30m 앞 잔디마당 구간으로 진입합니다. 편안하게 산책하세요."
+        end
     end
+
+    User->>Front: 산책 완료 후 스마트폰 화면 켜기 & 완주 확인
+    Front->>API: POST /api/walks (실제 이동 궤적 및 완주 기록 저장)
 ```
 
 ### 4.2 비전 AI 특화 플로우 (Vision AI Workflows)
@@ -359,7 +375,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor User as 견주 (공원 입구)
-    participant Front as Next.js Frontend
+    participant Front as Expo App (Frontend)
     participant API as FastAPI Backend
     participant Vision as Gemini Flash (ParkBoardInspector)
     participant Agent as LangGraph Agent
@@ -378,7 +394,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor User as 견주 (산책 완료 후)
-    participant Front as Next.js Frontend
+    participant Front as Expo App (Frontend)
     participant API as FastAPI Backend
     participant Vision as Gemini Flash (CommunityMapEnricher)
     participant DB as Supabase (OSM Cache / Metadata)
@@ -402,7 +418,7 @@ sequenceDiagram
 
 | 영역 | 기술 스택 | 배포 대상 | 구성 세부 사항 |
 |---|---|---|---|
-| **Frontend** | Next.js 14, Tailwind | **Vercel** | Edge Network, 모바일 웹 PWA 메타태그, 자동 HTTPS, PR 미리보기 배포 |
+| **Frontend** | React Native (Expo SDK 51+), TypeScript | **EAS (Expo Application Services)** | EAS Build(단 1회 Android APK 배포) + EAS Update(GitHub Actions 연동 무선 OTA 즉시 배포) |
 | **Backend & AI** | FastAPI, Python 3.11 | **Render / Cloud Run** | Docker 컨테이너 기반 자동 빌드, Healthcheck(`/healthz`), CORS 도메인 격리 |
 | **Database & Auth** | Supabase (PostgreSQL) | **Supabase Cloud** | pgvector 익스텐션 활성화, RLS(Row Level Security) 정책, Storage 버킷 |
 | **스케줄 자동화** | n8n | **n8n Cloud / Self-hosted** | 기상청 지면열 연동 일일 크론(오전 9시) ➔ 안전 산책 골든타임 웹훅 발송 |
@@ -415,12 +431,14 @@ sequenceDiagram
 1. **응답 시간 최적화 (Latency)**:
    - 복합 산책로 생성 요청은 5초 이내 완료 (토지피복 Spatial Join 0.1초 + GIS 라우팅 연산 1.5초 + Agent 오케스트레이션 2초 이내).
    - 비전 판독(안내판/커뮤니티 사진)은 Gemini Flash 기반 경량화로 2.5초 이내 완료.
-2. **모바일 웹 안정성 및 메모리 관리**:
-   - Screen Wake Lock API를 활용하여 산책 중 화면 꺼짐 방지 및 백그라운드 GPS 로깅 안정성 확보.
-   - 컴포넌트 언마운트 시 Mapbox 지도 인스턴스 `map.remove()` 필수 호출로 장시간 사용 시 브라우저 탭 크래시 방지.
+2. **모바일 앱 백그라운드 안정성 및 배터리 최적화**:
+   - Android Foreground Service를 활용하여 산책 중 스마트폰 화면이 꺼지거나 주머니/가방에 보관되어도 백그라운드 고정밀 GPS 로깅 및 `expo-speech` 음성 합성이 누락 없이 연속 실행되도록 보장.
+   - 배터리 절약을 위해 1초/5m 적응형 위치 폴링 및 TTS 재생 큐 최적화 적용.
 3. **AI 안전장치 및 윤리적 고지 (Safety Guardrails)**:
    - 생성된 경로는 실시간 교통/공사 상황에 따라 달라질 수 있음을 화면 상단에 명시 (`AI 생성 경로 알림`).
    - 비전 분석 시 신뢰도 0.85 미만 데이터는 지도 속성에 자동 반영하지 않고 검토 대기 큐로 격리.
    - 안내판 판독 결과 반려견 출입 금지 구역 감지 시 해당 세그먼트를 라우팅 금지(Block) 영역으로 강제 격리.
 4. **테스트 동기화 및 5인 CBT 검증 무결성**:
    - 요구사항(User Story/Task) 수정 시 연계된 테스트케이스(인수조건 검증, Fixture)를 즉각 갱신하여 5인 CBT 시나리오의 100% 정상 작동을 보장.
+5. **질병 용어 전면 배제 및 긍정적 웰니스 카피라이팅 가드레일**:
+   - 앱 화면 UI, 온보딩, TTS 음성 스크립트, AI 프롬프트 전역에서 '슬개골 탈구' 및 의학적 질병 단어 노출을 엄격히 금지하고 "폭신한 길", "관절 안심 케어", "부드러운 잔디/흙길" 등 긍정적 웰니스 표현으로 일원화. (※ 질병 통계는 투자 유치용 발표 자료에만 제한적으로 활용)

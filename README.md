@@ -23,14 +23,15 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 ## 1. 💡 왜 PawTrail인가? (기획 배경)
 
 ### 견주들의 진짜 고민 (Problem)
-* **슬개골 탈구 및 관절 질환**: 국내 반려견의 약 70% 이상이 슬개골 탈구 위험에 노출되어 있습니다. 딱딱한 아스팔트와 보도블록은 반려견 관절에 지속적인 충격을 줍니다.
+* **관절 부담 및 노면 충격**: 국내 소형견의 다수가 관절 건강 관리가 필요하며, 딱딱한 아스팔트와 보도블록은 반려견 관절에 지속적인 충격을 줍니다. (심사용 통계: 07번 문서 참조)
 * **여름철 지면열 화상**: 한여름 낮 아스팔트 지면 온도는 50℃를 웃돌아 발바닥 패드 화상을 유발합니다.
 * **기존 상용 지도의 한계**: 네이버 지도, 카카오맵, T맵 등은 자동차나 사람 기준의 **'최단거리'**만 안내할 뿐, 바닥이 **흙길인지 아스팔트인지 자갈밭인지** 알려주지 않습니다.
 
 ### PawTrail의 해결책 (Solution)
 * **노면 인지형 라우팅 (Surface-Aware Routing)**: 환경부 세분류 토지피복지도(SHP) Spatial Join과 OSM 도로망을 결합해 흙길/잔디길 통과 비율을 극대화한 순환 코스를 생성합니다.
 * **AI 비전 사전/사후 진단**: 공원 입구 종합안내판 사진을 찍으면 흙길 코스와 반려견 출입 금지구역을 사전 판독하고, 완주 후기 사진 비전 검증으로 지도의 결측 노면을 영구 보강합니다.
-* **주머니 속 안심 트래킹**: 산책 중 스마트폰을 주머니에 넣어도 화면 꺼짐 없이 안전하게 위치를 연속 기록합니다.
+* **시선 해방(Eyes-Free) & 두 손 자유(Hands-Free) 음성 길 안내**: 한 손에 리드줄을 쥐고 스마트폰을 계속 보며 걷는 위험을 없애고, 주머니 속에서도 화면 꺼짐 없이 Android Foreground Service와 `expo-speech` TTS로 회전 및 노면 변경을 음성으로 브리핑합니다.
+* **긍정적 웰니스 UX 혁신**: 앱 실행 화면 및 음성 안내에서 불편한 질병 용어를 배제하고, "폭신한 길", "관절 안심 케어" 등 따뜻하고 긍정적인 웰니스 언어로 100% 순화합니다.
 
 ---
 
@@ -38,10 +39,10 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 
 | 기능 | 아이콘 | 설명 | 담당 기술 |
 |---|:---:|---|---|
-| **자연어 산책 플래너** | 🤖 | "슬개골 안 좋은 포메인데 30분 정도 가볍게 걷고 싶어"라고 말하면 AI가 의도와 반려견 상태를 파악해 코스 제안 | LangGraph, Gemini 2.5 Flash |
+| **자연어 산책 플래너** | 🤖 | "관절 안심 케어가 필요한 포메인데 30분 정도 폭신한 길로 걷고 싶어"라고 말하면 AI가 의도를 파악해 최적 코스 제안 | LangGraph, Gemini 2.5 Flash |
 | **선호 노면 맞춤 라우팅** | 🗺️ | 흙/잔디길 가중치 할인(0.4~0.5), 아스팔트/자갈길 회피(2.5~3.5), 환경부 토지피복 공간 결합 기반 순환 코스 생성 | Routing API Provider, GeoPandas Spatial Join |
 | **공원 안내판 & 노면 비전 검증** | 📸 | 공원 안내판 판독으로 출입금지구역 사전 회피 및 완주 후기 사진 검증을 통한 지도 속성 영구 보강 | Gemini 1.5 Flash Vision, Structured Output |
-| **주머니 보관 연속 트래킹** | 📱 | Screen Wake Lock + 초절전 다크 포켓 모드로 화면 꺼짐과 오터치를 방지하며 완주 기록 수집 | HTML5 Geolocation, WakeLock API |
+| **핸즈프리 백그라운드 음성 안내** | 🎧 | 스마트폰을 주머니나 가방에 넣고 화면을 끈 상태에서도 턴 및 노면 변경을 실시간 음성 브리핑 | React Native, expo-location, expo-speech |
 | **공영주차장 P&R 연계** | 🚗 | 차를 타고 이동해 산책하는 대형견/원정 견주를 위한 공영주차장 거점 추천 | 공공데이터포털 주차장 API |
 | **안심 코스 피드 & 체크인** | 🐾 | 완주 후 노면 만족도 평가, 집 주소 노출 방지(좌표 마스킹) 후 커뮤니티 공유 | Supabase (PostgreSQL) |
 
@@ -49,21 +50,21 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 
 ## 3. 🏗️ 시스템 아키텍처 (Architecture)
 
-PawTrail은 **Next.js 모바일 웹(Frontend) + FastAPI(Backend) + LangGraph / Gemini(AI) + Supabase(DB & Memory) + n8n(Automation)**으로 구성된 모던 클라우드 네이티브 아키텍처를 채택하고 있습니다.
+PawTrail은 **React Native Expo 모바일 앱(Frontend) + FastAPI(Backend) + LangGraph / Gemini(AI) + Supabase(DB & Memory) + EAS Update & n8n(Automation)**으로 구성된 모던 클라우드 네이티브 아키텍처를 채택하고 있습니다.
 
 ```mermaid
 flowchart TD
-    User["📱 견주 (모바일 웹 브라우저)"]
+    User["📱 견주 (React Native Expo App)"]
     
-    subgraph Frontend ["Frontend (Next.js / Tailwind CSS / Mapbox)"]
-        UI["반응형 한 손 조작 UI"]
-        Pocket["Screen Wake Lock 및 다크 포켓 모드"]
-        DeepLink["네이버/카카오 지도 도보 딥링크"]
+    subgraph Frontend ["Frontend (Expo SDK 51+ / React Native Maps)"]
+        UI["네이티브 웰니스 칩 UI"]
+        VoiceNavi["시선 해방 백그라운드 음성 길 안내<br/>(expo-location Foreground Service + expo-speech)"]
+        EAS["EAS Update 무선 OTA 클라이언트"]
     end
 
     subgraph Backend ["Backend (FastAPI / Python)"]
         API["REST API 엔드포인트"]
-        RouterTool["순환 라우팅 엔진 (Surface Cost Model)"]
+        RouterTool["순환 라우팅 엔진 (Surface Cost Model & Steps)"]
         VisionTool["안내판 분석 및 노면 비전 검증 엔진"]
         SpatialTool["환경부 토지피복 GeoPandas Spatial Join"]
     end
@@ -81,8 +82,8 @@ flowchart TD
     end
 
     User <--> UI
-    UI <--> Pocket
-    UI <--> DeepLink
+    User <--> VoiceNavi
+    UI <--> EAS
     UI -- "JSON REST API" <--> API
     API <--> Agent
     Agent <--> Tools
@@ -106,8 +107,8 @@ flowchart TD
 | **Member A** | **PM & AI Agent Lead** | • 프로젝트 일정 관리 및 PM 총괄<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 | US-01, US-02, US-16 |
 | **Member B** | **AI / Vision Lead** | • Gemini Flash 비전 프롬프트 엔지니어링<br/>• 공원 종합안내판 판독 및 산책 후기 노면 사진 검증 | US-04, US-05 |
 | **Member C** | **Backend & Routing Lead** | • FastAPI 백엔드 구축 및 REST API 엔드포인트<br/>• 환경부 토지피복 Spatial Join, 1.5km Seed 데이터셋, 노면 가중치 순환 라우터 & 거리 환산 | US-02, US-03, US-13, US-16 |
-| **Member D** | **Frontend & UI/UX Lead** | • Next.js 기반 모바일 웹 반응형 UI/UX<br/>• Mapbox 노면 Polyline, Screen Wake Lock & 포켓 모드, 즐겨찾기 및 PWA 캐시 | US-07, US-08, US-09, US-14, US-15 |
-| **Member E** | **Infra, QA & DevOps Lead** | • Supabase DB 모델링(Memory/즐겨찾기) 및 Vercel/Render CI/CD<br/>• n8n 날씨 자동화 및 **5인 실사용자 CBT 총괄** | US-06, US-10, US-11, US-12, US-14 |
+| **Member D** | **Frontend & UI/UX Lead** | • React Native Expo 기반 모바일 앱 구축<br/>• React Native Maps 노면 Polyline, Foreground Service & expo-speech 백그라운드 음성 길 안내, 즐겨찾기 및 로컬 캐시 | US-07, US-08, US-09, US-14, US-15 |
+| **Member E** | **Infra, QA & DevOps Lead** | • Supabase DB 모델링(Memory/즐겨찾기) 및 EAS Build/Update 무선 배포<br/>• n8n 날씨 자동화 및 **5인 실사용자 CBT 총괄** | US-06, US-10, US-11, US-12, US-14 |
 
 ---
 
@@ -193,7 +194,7 @@ python -m pytest test_case/ -q
 
 ### 8.1 5인 실사용자 CBT 검증 목표 (US-11)
 캡스톤 4주차에는 단순 시연이 아닌 **실제 견주 5인**과 함께 현장 필드 테스트를 진행합니다:
-1. **소형견 (포메라니안)**: 슬개골 탈구 예방을 위한 흙/잔디길 가중치 반영 검증
+1. **소형견 (포메라니안)**: 관절 안심 케어를 위한 흙/잔디길 가중치 및 핸즈프리 음성 길 안내 검증
 2. **대형견 (골든 리트리버)**: 원정 산책을 위한 공영주차장(P&R) 출발 코스 검증
 3. **노령견 (시츄 13세)**: 무리 없는 완만한 평지 및 그늘 노면 위주 경로 검증
 4. **일반견 (믹스견)**: 공원 입구 종합안내판 촬영 업로드 및 산책 후기 노면 사진 검증
@@ -204,7 +205,8 @@ python -m pytest test_case/ -q
 - [x] 실제 서비스 E2E 시나리오에서 정상 동작 확인 (껍데기 Mock 배제)
 - [x] Mock이 아닌 실제 API / DB / AI 연동 완료
 - [x] 유효하지 않은 입력 및 외부 API 타임아웃/오류 방어 로직 완비
-- [x] 모바일 웹 브라우저에서 한 손 조작 및 야외 시인성 충족
+- [x] 모바일 앱 환경에서 시선 해방 음성 길 안내, 한 손 조작 및 야외 시인성 충족
+- [x] 앱 실행 화면 및 음성 스크립트 내 질병 용어 배제 및 긍정적 웰니스 언어 준수
 - [x] 개인정보 보호(출발지/거주지 좌표 블러링 마스킹) 및 보안 요건 준수
 - [x] `test_case/` 내 단위/통합 테스트 100% 통과
 - [x] 코드 규모 기준 충족 (단일 파일 250줄, 함수 40줄, 인지 복잡도 10 이하)

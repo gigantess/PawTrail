@@ -32,7 +32,8 @@ class CanineMemoryContext(BaseModel):
     dog_id: str
     name: str
     breed: str
-    patella_luxation_stage: int = Field(..., ge=0, le=4)
+    joint_care_level: int = Field(default=0, ge=0, le=4, description="관절 안심 케어 수준 0~4")
+    patella_luxation_stage: Optional[int] = Field(default=None, ge=0, le=4, description="레거시 호환 필드")
     recommended_max_duration: int = Field(..., ge=5, le=120)
     caution_surfaces: List[AllowedSurface]
     recent_walk_count: int = Field(default=0, ge=0)
@@ -171,25 +172,27 @@ class TestAgentClarificationLoop:
 class TestCanineMemoryContextInjection:
     """반려견 건강 프로필 및 과거 산책 맥락 주입 테스트 (US-06)."""
 
-    def test_senior_patella_dog_generates_correct_constraints(self, sample_dog_profiles):
-        """슬개골 2기 소형견 프로필 조회 시 주의 노면 및 시간 제약 조건 생성 검증."""
+    def test_joint_care_dog_generates_correct_constraints(self, sample_dog_profiles):
+        """관절 안심 케어 집중 소형견 프로필 조회 시 주의 노면 및 시간 제약 조건 생성 검증."""
         dog = sample_dog_profiles["tester1_maltese"]
+        joint_level = dog.get("joint_care_level", dog.get("patella_luxation_stage", 0))
         
-        # 비즈니스 로직: 슬개골 2기 이상인 경우 아스팔트/자갈 주의 노면 자동 지정
-        caution = ["asphalt", "gravel"] if dog["patella_luxation_stage"] >= 2 else []
-        max_dur = 25 if dog["patella_luxation_stage"] >= 2 else 45
+        # 비즈니스 로직: 관절 안심 케어 2레벨 이상인 경우 아스팔트/자갈 주의 노면 자동 지정
+        caution = ["asphalt", "gravel"] if joint_level >= 2 else []
+        max_dur = 25 if joint_level >= 2 else 45
 
         context = CanineMemoryContext(
             dog_id=dog["dog_id"],
             name=dog["name"],
             breed=dog["breed"],
-            patella_luxation_stage=dog["patella_luxation_stage"],
+            joint_care_level=joint_level,
+            patella_luxation_stage=joint_level,
             recommended_max_duration=max_dur,
             caution_surfaces=caution,
             recent_walk_count=5
         )
 
-        assert context.patella_luxation_stage == 2
+        assert context.joint_care_level == 2
         assert "asphalt" in context.caution_surfaces
         assert context.recommended_max_duration <= 30
 
@@ -197,15 +200,17 @@ class TestCanineMemoryContextInjection:
 def calculate_target_walk_distance(
     duration_minutes: int,
     dog_size: Literal["small", "medium", "large"],
-    patella_stage: int = 0
+    joint_care_level: int = 0,
+    patella_stage: Optional[int] = None
 ) -> float:
     """US-16: 사용자가 지정한 산책 시간 및 반려견 체급/건강 상태 기반 목표 거리(m) 산출."""
     # 보행 속도 (m/min): 소형견 50 (3.0km/h), 중형견 60 (3.6km/h), 대형견 70 (4.2km/h)
     speed_map = {"small": 50.0, "medium": 60.0, "large": 70.0}
     base_speed = speed_map.get(dog_size, 50.0)
 
-    # 슬개골 2기 이상 또는 노령견은 20% 감속 (안전 보행)
-    if patella_stage >= 2:
+    # 관절 안심 케어 2레벨 이상 또는 노령견은 20% 감속 (부드러운 안전 보행)
+    effective_level = patella_stage if patella_stage is not None else joint_care_level
+    if effective_level >= 2:
         base_speed *= 0.8  # 40.0 m/min (2.4 km/h)
 
     return round(base_speed * duration_minutes, 1)
@@ -224,8 +229,8 @@ class TestTargetDurationCourseScheduler:
         dist = calculate_target_walk_distance(duration_minutes=45, dog_size="large")
         assert dist == 3150.0
 
-    def test_patella_dog_duration_distance_mitigation(self):
-        """슬개골 2기 반려견은 속도가 감속(40m/min)되어 20분 기준 800m로 산출되는지 검증."""
-        dist = calculate_target_walk_distance(duration_minutes=20, dog_size="small", patella_stage=2)
+    def test_joint_care_dog_duration_distance_mitigation(self):
+        """관절 안심 케어 반려견은 속도가 감속(40m/min)되어 20분 기준 800m로 산출되는지 검증."""
+        dist = calculate_target_walk_distance(duration_minutes=20, dog_size="small", joint_care_level=2)
         assert dist == 800.0
 

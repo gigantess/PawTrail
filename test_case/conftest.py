@@ -18,7 +18,8 @@ def sample_dog_profiles() -> Dict[str, Dict[str, Any]]:
             "breed": "말티즈",
             "age": 4,
             "weight_kg": 3.2,
-            "patella_luxation_stage": 2,  # 슬개골 탈구 2기
+            "joint_care_level": 2,  # 관절 안심 케어 집중 (안심 보행 2단계)
+            "patella_luxation_stage": 2,
             "default_preferred_surfaces": ["dirt", "grass"],
         },
         "tester2_retriever": {
@@ -27,6 +28,7 @@ def sample_dog_profiles() -> Dict[str, Dict[str, Any]]:
             "breed": "골든 리트리버",
             "age": 3,
             "weight_kg": 29.5,
+            "joint_care_level": 0,
             "patella_luxation_stage": 0,
             "default_preferred_surfaces": ["grass", "rubber", "paved"],
         },
@@ -36,7 +38,8 @@ def sample_dog_profiles() -> Dict[str, Dict[str, Any]]:
             "breed": "토이 푸들",
             "age": 11,
             "weight_kg": 4.1,
-            "patella_luxation_stage": 3,  # 노령견 관절 질환
+            "joint_care_level": 3,  # 노령견 관절 집중 안심 케어
+            "patella_luxation_stage": 3,
             "default_preferred_surfaces": ["rubber", "dirt"],
         },
     }

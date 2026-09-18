@@ -18,7 +18,8 @@ DOG_WALK_SPEEDS_M_PER_MIN = {
     "small": 50.0,       # 3.0 km/h
     "medium": 63.33,     # 3.8 km/h
     "large": 75.0,       # 4.5 km/h
-    "senior_patella": 41.67  # 2.5 km/h (관절 보호 및 노령견)
+    "senior_joint_care": 41.67,  # 2.5 km/h (관절 안심 케어 및 노령견)
+    "senior_patella": 41.67,     # 하위 호환성 유지
 }
 
 
@@ -26,14 +27,14 @@ class TargetDurationPlanRequest(BaseModel):
     """US-16 산책 시간 지정 요청 DTO."""
     dog_id: str
     target_duration_minutes: int = Field(..., ge=10, le=90, description="목표 산책 시간(10분~90분)")
-    dog_size: Literal["small", "medium", "large", "senior_patella"] = "small"
+    dog_size: Literal["small", "medium", "large", "senior_joint_care", "senior_patella"] = "small"
     origin_lat: float = Field(..., ge=-90.0, le=90.0)
     origin_lon: float = Field(..., ge=-180.0, le=180.0)
 
 
 def calculate_target_distance_meters(
     duration_minutes: int,
-    dog_size: Literal["small", "medium", "large", "senior_patella"]
+    dog_size: Literal["small", "medium", "large", "senior_joint_care", "senior_patella"]
 ) -> float:
     """시간과 보행 속도를 곱하여 목표 거리(m)를 산출하는 함수."""
     speed = DOG_WALK_SPEEDS_M_PER_MIN[dog_size]
@@ -81,7 +82,8 @@ class TestTargetDurationCourseGeneration:
         (45, "medium", 2850.0),          # 45분 중형견: 약 2850m
         (30, "large", 2250.0),           # 30분 대형견: 2250m
         (45, "large", 3375.0),           # 45분 대형견: 3375m
-        (20, "senior_patella", 833.4),   # 20분 슬개골/노령견: 약 833m
+        (20, "senior_joint_care", 833.4),  # 20분 관절 안심 케어/노령견: 약 833m
+        (20, "senior_patella", 833.4),     # 하위 호환성
     ])
     def test_target_distance_calculation_by_duration_and_size(
         self, duration, dog_size, expected_distance

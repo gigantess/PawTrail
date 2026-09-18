@@ -102,7 +102,7 @@ class TestApiContracts:
             "estimated_duration_minutes": 20,
             "preferred_surfaces": ["grass", "dirt"],
             "surface_breakdown": {"grass": 600.0, "dirt": 400.0, "paved": 200.0},
-            "ai_recommendation_comment": "코코의 슬개골 부담을 줄이기 위해 흙길과 잔디 비중 83%로 순환 경로를 구성했습니다.",
+            "ai_recommendation_comment": "코코의 편안한 관절 케어를 위해 흙길과 잔디 비중 83%로 순환 경로를 구성했습니다.",
             "status": "SUCCESS"
         }
         res = WalkPlanResponseDTO(**payload)

@@ -1,6 +1,6 @@
 # PawTrail 코딩 컨벤션 및 정적 분석(SonarLint) 가이드라인
 
-본 문서는 **PawTrail** 프로젝트의 코드 품질, 안정성 및 유지보수성을 극대화하고 SonarLint 정적 분석 경고를 사전에 방지하기 위한 통합 코딩 규칙입니다. 모든 프론트엔드(TypeScript/Next.js) 및 백엔드/AI(Python/FastAPI/LangGraph) 코드 작성 및 리팩토링 시 본 규칙을 엄격하게 준수해야 합니다.
+본 문서는 **PawTrail** 프로젝트의 코드 품질, 안정성 및 유지보수성을 극대화하고 SonarLint 정적 분석 경고를 사전에 방지하기 위한 통합 코딩 규칙입니다. 모든 프론트엔드(TypeScript/React Native Expo) 및 백엔드/AI(Python/FastAPI/LangGraph) 코드 작성 및 리팩토링 시 본 규칙을 엄격하게 준수해야 합니다.
 
 ---
 
@@ -13,7 +13,7 @@
 
 ---
 
-## 1. 프론트엔드 규칙 (Next.js / React / TypeScript / Tailwind CSS)
+## 1. 프론트엔드 규칙 (React Native / Expo SDK 51+ / TypeScript / React Native Maps)
 
 ### 1.1 컴포넌트 및 상태 관리
 - **함수형 컴포넌트 & 명시적 Props**:
@@ -140,8 +140,8 @@
    - 거대한 단일 파일(God Component / God Class)의 형성을 사전에 차단합니다.
 
 2. **도메인별 핵심 리팩토링 패턴**:
-   - **프론트엔드 (Next.js / React)**:
-     - **Custom Hook 추출 (`hooks/`)**: 컴포넌트 내 `useEffect`, `useState`, Geolocation, WakeLock, Mapbox 이벤트 바인딩 등 비즈니스/상태 로직이 30라인을 넘기면 즉시 커스텀 훅(`useWalkTracker`, `useSurfaceMap`, `useDogProfile` 등)으로 추출합니다.
+   - **프론트엔드 (React Native Expo)**:
+     - **Custom Hook 추출 (`hooks/`)**: 컴포넌트 내 `useEffect`, `useState`, Geolocation(Foreground Service), TTS Speech, Maps 이벤트 바인딩 등 비즈니스/상태 로직이 30라인을 넘기면 즉시 커스텀 훅(`useVoiceNavi`, `useWalkTracker`, `useSurfaceMap`, `useDogProfile` 등)으로 추출합니다.
      - **프레젠테이션 컴포넌트 분리 (`components/`)**: 단일 컴포넌트에 2개 이상의 의미 있는 UI 블록(헤더, 지도 컨트롤, 하단 시트, 통계 뱃지 등)이 혼재되면 독립 컴포넌트로 쪼갭니다.
    - **백엔드 및 AI (FastAPI / LangGraph)**:
      - **Service Layer 이관 (`services/`)**: 라우터 엔드포인트(`api/routes/`) 함수 내에 데이터 파싱, 외부 API 호출, DB 쿼리가 40라인 이상 뒤섞이지 않도록 순수 라우팅과 비즈니스 로직(Service/Domain Layer)을 엄격히 분리합니다.
@@ -168,6 +168,10 @@
 
 ### [DRY & Single Source of Truth]
 - 2회 이상 중복되는 로직(노면 색상 매핑, 거리 포맷팅, 날짜 파싱 등)은 반드시 공통 유틸리티(`utils/`)로 모듈화하여 단일 진실 공급원을 유지합니다.
+
+### [Wellness Copywriting Rule] 앱 내 질병 용어 전면 배제 및 긍정적 웰니스 표현 일원화
+- UI 컴포넌트 텍스트, TTS 음성 스크립트, 프롬프트 템플릿, DTO 필드 주석 전역에서 "슬개골 탈구", "질환 단계" 등 임상/의학적 용어 사용을 전면 금지합니다.
+- 항상 "폭신한 길", "관절 안심 케어", "부드러운 잔디/흙길", "편안한 발걸음" 등 긍정적 웰니스 용어를 사용합니다. (※ 질병 통계는 투자 유치용 발표 자료에만 제한적으로 활용)
 
 ---
 
