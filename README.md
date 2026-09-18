@@ -123,7 +123,8 @@ docs/
 ├── 04_PawTrail_Architecture_Design.md        [4단계: C4 아키텍처 및 시스템 세부 설계]
 ├── 05_PawTrail_Detailed_Implementation_Plan.md [5단계: 5주간 개발 마일스톤 및 5인 협업 계획]
 ├── 06_PawTrail_Task_Breakdown_and_Estimations.md [6단계: 54개 구현 세부 Task (총 330h / 약 324h)]
-└── screens/                                  [7단계: 5대 핵심 시나리오 UI 스크린 & 인터랙티브 뷰어]
+├── 07_PawTrail_Presentation_Pain_Points.md   [7단계: 발표 평가 페인 포인트 & 4대 기술 돌파구]
+└── screens/                                  [8단계: 5대 핵심 시나리오 UI 스크린 & 인터랙티브 뷰어]
 ```
 
 > 💡 **AI 협업 및 개발 지침 (`.gemini/`)**:
@@ -149,25 +150,23 @@ PawTrail은 코드 작성 전 테스트를 먼저 정의하고 검증하는 **TD
 # 1. 의존성 설치 (필요시)
 pip install -r requirements.txt  # 또는 pytest, pydantic, httpx 설치
 
-# 2. 전체 단위/통합 테스트 실행 (55개 테스트 전수 검증)
+# 2. 전체 단위/통합 테스트 실행 (60개 테스트 전수 검증)
 python -m pytest test_case/ -q
 ```
 
 실행 결과 예시:
 ```
-.......................................................                  [100%]
-55 passed in 0.34s
+............................................................                  [100%]
+60 passed in 0.35s
 ```
 
 ### 6.3 테스트 스위트 구조 (`test_case/`)
-* `test_surface_cost_model.py`: 노면 비용 공식($\text{Cost} = \text{Length} \times W_{\text{base}} \times W_{\text{pref}}$) 및 할인 검증
-* `test_osm_fallback.py`: 환경부 토지피복 Spatial Join 및 5단계 `surface_source` 투명성 태깅 검증
-* `test_routing_provider.py`: 외부 Routing Provider 어댑터 및 순환 Waypoint 샘플링 검증
-* `test_vision_analyzer.py`: Gemini Flash 공원 안내판 판독 및 산책 후기 노면 사진 검증 Structured JSON 스키마 검증
-* `test_thermal_model.py`: 기상청 일사량/기온 연동 지면열 수지식 검증
-* `test_api_endpoints.py`: FastAPI 핵심 8개 REST API 엔드포인트 요청/응답 스키마 검증
-* `test_agent_orchestrator.py`: 반려견 컨텍스트 주입 및 도구 오케스트레이션 검증
-* `test_pocket_tracker.py`: Screen Wake Lock 및 주머니 보관 시 경로 스냅(Dead Reckoning) 복원 검증
+* `test_surface_cost_model.py`: 노면 비용 공식($\text{Cost} = \text{Length} \times W_{\text{base}} \times W_{\text{pref}}$), 환경부 토지피복 Spatial Join 및 5단계 `surface_source` 투명성 태깅 검증
+* `test_walk_plan_agent_schema.py`: 반려견 컨텍스트 주입, Clarification 되물음 루프 및 보행 속도 매핑 기반 목표 거리 자동 환산 검증
+* `test_vision_safety_inspector.py`: Gemini Flash 공원 종합안내판 판독(`ParkBoardInspector`) 및 완주 후기 노면 사진 검증(`CommunityMapEnricher`) 검증
+* `test_walk_tracking_and_feedback.py`: 선호 노면 달성률(%), 체크인 피드백 및 오프라인 IndexedDB 동기화 검증
+* `test_thermal_and_parking.py`: 기상청 일사량/기온 연동 지면열 수지식 및 반경 1.5km 공영주차장(P&R) 필터링 검증
+* `test_api_contracts.py`: FastAPI 핵심 REST API 엔드포인트(`inspect-board`, `verify-surface`, `favorites` 등) 요청/응답 스키마 계약 검증
 
 ---
 
