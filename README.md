@@ -28,8 +28,8 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 * **기존 상용 지도의 한계**: 네이버 지도, 카카오맵, T맵 등은 자동차나 사람 기준의 **'최단거리'**만 안내할 뿐, 바닥이 **흙길인지 아스팔트인지 자갈밭인지** 알려주지 않습니다.
 
 ### PawTrail의 해결책 (Solution)
-* **노면 인지형 라우팅 (Surface-Aware Routing)**: 공원과 산책로의 노면 데이터(OSM)를 분석하여 흙길/잔디길 통과 비율을 극대화한 순환 코스를 생성합니다.
-* **AI 비전 현장 진단**: 산책 중 바닥 사진을 찍으면 Gemini Vision이 파쇄석, 깨진 유리조각, 지면열 위험도를 즉시 판독해 줍니다.
+* **노면 인지형 라우팅 (Surface-Aware Routing)**: 환경부 세분류 토지피복지도(SHP) Spatial Join과 OSM 도로망을 결합해 흙길/잔디길 통과 비율을 극대화한 순환 코스를 생성합니다.
+* **AI 비전 사전/사후 진단**: 공원 입구 종합안내판 사진을 찍으면 흙길 코스와 반려견 출입 금지구역을 사전 판독하고, 완주 후기 사진 비전 검증으로 지도의 결측 노면을 영구 보강합니다.
 * **주머니 속 안심 트래킹**: 산책 중 스마트폰을 주머니에 넣어도 화면 꺼짐 없이 안전하게 위치를 연속 기록합니다.
 
 ---
@@ -39,8 +39,8 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 | 기능 | 아이콘 | 설명 | 담당 기술 |
 |---|:---:|---|---|
 | **자연어 산책 플래너** | 🤖 | "슬개골 안 좋은 포메인데 30분 정도 가볍게 걷고 싶어"라고 말하면 AI가 의도와 반려견 상태를 파악해 코스 제안 | LangGraph, Gemini 2.5 Flash |
-| **선호 노면 맞춤 라우팅** | 🗺️ | 흙/잔디길 가중치 할인(0.4~0.5), 아스팔트/자갈길 회피(2.5~3.5)를 적용한 출발지 회귀 순환 코스 생성 | Routing API Provider, GIS Cost Model |
-| **현장 노면 비전 진단** | 📸 | 산책로 바닥 사진 촬영 시 위험물(유리, 자갈)과 안전 점수(0~100점)를 실시간 판독 | Gemini Vision, Structured Output |
+| **선호 노면 맞춤 라우팅** | 🗺️ | 흙/잔디길 가중치 할인(0.4~0.5), 아스팔트/자갈길 회피(2.5~3.5), 환경부 토지피복 공간 결합 기반 순환 코스 생성 | Routing API Provider, GeoPandas Spatial Join |
+| **공원 안내판 & 노면 비전 검증** | 📸 | 공원 안내판 판독으로 출입금지구역 사전 회피 및 완주 후기 사진 검증을 통한 지도 속성 영구 보강 | Gemini 1.5 Flash Vision, Structured Output |
 | **주머니 보관 연속 트래킹** | 📱 | Screen Wake Lock + 초절전 다크 포켓 모드로 화면 꺼짐과 오터치를 방지하며 완주 기록 수집 | HTML5 Geolocation, WakeLock API |
 | **공영주차장 P&R 연계** | 🚗 | 차를 타고 이동해 산책하는 대형견/원정 견주를 위한 공영주차장 거점 추천 | 공공데이터포털 주차장 API |
 | **안심 코스 피드 & 체크인** | 🐾 | 완주 후 노면 만족도 평가, 집 주소 노출 방지(좌표 마스킹) 후 커뮤니티 공유 | Supabase (PostgreSQL) |
@@ -64,16 +64,17 @@ flowchart TD
     subgraph Backend ["Backend (FastAPI / Python)"]
         API["REST API 엔드포인트"]
         RouterTool["순환 라우팅 엔진 (Surface Cost Model)"]
-        VisionTool["노면 비전 진단 엔진"]
+        VisionTool["안내판 분석 및 노면 비전 검증 엔진"]
+        SpatialTool["환경부 토지피복 GeoPandas Spatial Join"]
     end
 
     subgraph AI_Agent ["AI Agent Layer (LangGraph / ReAct)"]
         Agent["PawTrail Orchestrator Agent"]
-        Tools["도구 레지스트리 (@tool)<br/>- get_dog_context<br/>- generate_loop_route<br/>- analyze_surface_image<br/>- search_parking"]
+        Tools["도구 레지스트리 (@tool)<br/>- get_dog_context<br/>- generate_loop_route<br/>- inspect_park_board<br/>- search_parking"]
     end
 
     subgraph Data_Infra ["Database and External Services"]
-        DB[("Supabase (PostgreSQL)<br/>반려견 프로필 및 산책 이력")]
+        DB[("Supabase (PostgreSQL)<br/>반려견 프로필 및 산책 이력 / 피복도 캐시")]
         Gemini["Google Gemini 1.5 / 2.5 Flash"]
         OSM["OpenRouteService / OSRM"]
         n8n["n8n 기상청 지면열 자동 알림"]
@@ -88,6 +89,7 @@ flowchart TD
     Tools <--> RouterTool
     Tools <--> VisionTool
     Tools <--> Gemini
+    RouterTool <--> SpatialTool
     RouterTool <--> OSM
     API <--> DB
     n8n -. "Webhook 알림" .-> DB
@@ -102,8 +104,8 @@ flowchart TD
 | 역할 | 담당자 | 주 업무 영역 | 담당 사용자 스토리 |
 |---|:---:|---|---|
 | **Member A** | **PM & AI Agent Lead** | • 프로젝트 일정 관리 및 PM 총괄<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 | US-01, US-02, US-16 |
-| **Member B** | **AI / Vision Lead** | • Gemini Flash 비전 프롬프트 엔지니어링<br/>• 노면 시각적 위험 판독 및 재탐색 피드백 | US-04, US-05 |
-| **Member C** | **Backend & Routing Lead** | • FastAPI 백엔드 구축 및 REST API 엔드포인트<br/>• Routing API Provider 연동, 노면 가중치 순환 라우터 & 거리 환산 | US-02, US-03, US-13, US-16 |
+| **Member B** | **AI / Vision Lead** | • Gemini Flash 비전 프롬프트 엔지니어링<br/>• 공원 종합안내판 판독 및 산책 후기 노면 사진 검증 | US-04, US-05 |
+| **Member C** | **Backend & Routing Lead** | • FastAPI 백엔드 구축 및 REST API 엔드포인트<br/>• 환경부 토지피복 Spatial Join, 1.5km Seed 데이터셋, 노면 가중치 순환 라우터 & 거리 환산 | US-02, US-03, US-13, US-16 |
 | **Member D** | **Frontend & UI/UX Lead** | • Next.js 기반 모바일 웹 반응형 UI/UX<br/>• Mapbox 노면 Polyline, Screen Wake Lock & 포켓 모드, 즐겨찾기 및 PWA 캐시 | US-07, US-08, US-09, US-14, US-15 |
 | **Member E** | **Infra, QA & DevOps Lead** | • Supabase DB 모델링(Memory/즐겨찾기) 및 Vercel/Render CI/CD<br/>• n8n 날씨 자동화 및 **5인 실사용자 CBT 총괄** | US-06, US-10, US-11, US-12, US-14 |
 
@@ -159,9 +161,9 @@ python -m pytest test_case/ -q
 
 ### 6.3 테스트 스위트 구조 (`test_case/`)
 * `test_surface_cost_model.py`: 노면 비용 공식($\text{Cost} = \text{Length} \times W_{\text{base}} \times W_{\text{pref}}$) 및 할인 검증
-* `test_osm_fallback.py`: OSM 태그 누락 시 4단계 Fallback 추정 로직 검증
+* `test_osm_fallback.py`: 환경부 토지피복 Spatial Join 및 5단계 `surface_source` 투명성 태깅 검증
 * `test_routing_provider.py`: 외부 Routing Provider 어댑터 및 순환 Waypoint 샘플링 검증
-* `test_vision_analyzer.py`: Gemini Flash Structured JSON 스키마 및 안전 점수 판독 검증
+* `test_vision_analyzer.py`: Gemini Flash 공원 안내판 판독 및 산책 후기 노면 사진 검증 Structured JSON 스키마 검증
 * `test_thermal_model.py`: 기상청 일사량/기온 연동 지면열 수지식 검증
 * `test_api_endpoints.py`: FastAPI 핵심 8개 REST API 엔드포인트 요청/응답 스키마 검증
 * `test_agent_orchestrator.py`: 반려견 컨텍스트 주입 및 도구 오케스트레이션 검증
@@ -195,7 +197,7 @@ python -m pytest test_case/ -q
 1. **소형견 (포메라니안)**: 슬개골 탈구 예방을 위한 흙/잔디길 가중치 반영 검증
 2. **대형견 (골든 리트리버)**: 원정 산책을 위한 공영주차장(P&R) 출발 코스 검증
 3. **노령견 (시츄 13세)**: 무리 없는 완만한 평지 및 그늘 노면 위주 경로 검증
-4. **일반견 (믹스견)**: 산책 중 현장 바닥 사진 촬영 및 위험물 회피 리라우팅 검증
+4. **일반견 (믹스견)**: 공원 입구 종합안내판 촬영 업로드 및 산책 후기 노면 사진 검증
 5. **활동견 (보더콜리)**: n8n 기상청 지면열 골든타임 알림 수신 후 완주 및 피드백 검증
 
 ### 8.2 기능 완료 정의 (Definition of Done)

@@ -9,11 +9,11 @@
     - LangGraph 기반 Walk Planning Agent 상태 머신 설계 및 ReAct 프롬프트 엔지니어링 (US-01, US-02, US-16)
     - Pydantic V2 Strict Tool-calling 규격 수립, Long-term Memory 맥락 주입 및 전체 PM 총괄
   * **Member B (AI / Vision & Multimodal Lead)**:
-    - Gemini 1.5 Flash 기반 노면 재질/위험물 진단 파이프라인(`SurfaceSafetyInspector`) 개발 (US-04)
-    - Structured JSON 출력 스키마 고정, 노면 위험도 점수 연산 및 재탐색 피드백 핸들러 구현 (US-05)
+    - Gemini 1.5 Flash 기반 공원 입구 종합안내판 비전 판독 파이프라인(`ParkBoardInspector`) 개발 (US-04)
+    - Structured JSON 출력 스키마 고정, 산책 완주 후기 사진 노면 검증 및 커뮤니티 지도 보강 파이프라인(`CommunityMapEnricher`) 구현 (US-05)
   * **Member C (Backend & Spatial Routing Lead)**:
     - FastAPI 백엔드 구축 및 REST API 엔드포인트 구현 (SSE는 제외하고 예측 가능한 REST 구조 우선)
-    - OSM 노면 결측치 Fallback 추정 및 Routing API Provider 연동 기반 순환형(Loop) 라우터 도구 개발 (US-02, US-03, US-13, US-16)
+    - OSM 노면 결측치 보정을 위한 환경부 세분류 토지피복지도 GeoPandas Spatial Join 및 1.5km Seed 데이터셋 구축, Routing API Provider 연동 기반 순환형(Loop) 라우터 도구 개발 (US-02, US-03, US-13, US-16)
   * **Member D (Frontend & UI/UX Lead)**:
     - Next.js / Tailwind CSS 기반 반응형 모바일 웹 인터페이스 구축 (US-07)
     - Mapbox GL JS 기반 노면별 색상 구분 Polyline 렌더링, 주머니 보관 연속 GPS 추적(Wake Lock/포켓 모드) 및 외부 지도 딥링크 UI 구현 (US-07, US-08, US-09, US-14, US-15)
@@ -46,11 +46,11 @@
     - LangGraph State 정의 (`messages`, `dog_profile`, `preferred_surfaces`, `route_result`).
     - 자연어 입력에서 견종, 산책 시간, 선호 노면을 추출하는 ReAct 시스템 프롬프트 초안 작성 및 테스트 (US-01).
   * **Member B (Vision AI)**:
-    - 노면 테스트 이미지 30장(흙, 잔디, 아스팔트, 파쇄석, 보도블록, 공사 잔해 등) 데이터셋 구축.
-    - Gemini 1.5 Flash API 연동 및 Structured Output 프롬프트 벤치마킹 (US-04).
+    - 공원 종합안내판 15장 및 노면 근접 촬영 20장(흙, 잔디, 자갈 등) 벤치마킹 데이터셋 구축.
+    - Gemini 1.5 Flash API 연동 및 `ParkBoardInspector` Few-shot 프롬프트 벤치마킹 (US-04).
   * **Member C (Backend/GIS)**:
     - 테스트베드 구역 OSM 보행 네트워크 데이터(.osm.pbf) 파싱 및 NetworkX 그래프 생성.
-    - OSM `surface` 결측치 자동 보정(Fallback) 룰 모듈 구현 (US-03).
+    - 환경부 세분류 토지피복지도(SHP) 다운로드 및 GeoPandas Spatial Join 파이프라인 구축. 항공·로드뷰 교차 검증 1.5km Seed 데이터셋 구축 착수 (US-03).
   * **Member D (Frontend)**:
     - Next.js 14 + Tailwind CSS 보일러플레이트 구성 및 모바일 반응형 뷰포트 설정.
     - Mapbox GL JS 맵 캔버스 초기화 및 기본 마커/컨트롤 UI 구성.
@@ -62,19 +62,20 @@
 * **주간 목표**: 사용자 선호 노면 순환 라우팅 완료, 비전 판독 및 메모리 모듈 단위 테스트 100% 통과.
 * **팀원별 세부 구현 태스크**:
   * **Member A (AI Agent)**:
-    - Pydantic V2 Strict Schema 기반 자율 호출 도구 3종 바인딩 (`get_dog_context`, `generate_loop_route`, `analyze_surface_image`).
+    - Pydantic V2 Strict Schema 기반 자율 호출 도구 3종 바인딩 (`get_dog_context`, `generate_loop_route`, `inspect_park_board`).
     - 선호 노면 파라미터가 누락되었을 때의 사용자 명확화 질문(Clarification) 대화 루프 구현.
     - 목표 산책 시간(Target Duration) 칩/슬라이더 및 자연어 발화 파라미터 매핑 바인딩 (US-16).
   * **Member B (Vision AI)**:
-    - `SurfaceSafetyInspector` 모듈 완성: `safety_score`(0~100), 노면 재질, 위험요소 파싱 (US-04).
-    - 예외 처리: 저조도/흐린 사진 입력 시 신뢰도 부족 경고 및 재촬영 요청 로직 추가.
+    - `ParkBoardInspector` 모듈 완성: 공원명, 노면 범례, 반려견 출입 금지/허용 구역 구조화 JSON 파싱 (US-04).
+    - 예외 처리: 저조도/반사광/각도 왜곡 사진 입력 시 신뢰도 부족 경고 및 재촬영 요청 로직 추가.
   * **Member C (Backend/GIS)**:
     - 사용자 선호 노면 할인 계수($W_{\text{pref}} = 0.4 \sim 0.5$) 및 페널티 계수 비용 함수 모듈 개발 (US-02).
+    - `LandCoverSpatialService` 연동으로 OSM 결측 링크의 80% 이상을 흙/잔디/인공포장으로 정밀 판별하고 1.5km Seed 데이터셋 확정 (US-03).
     - 출발점 기준 다각형 경유지(Waypoint) 샘플링 및 Routing API(ORS/OSRM) 연동 순환 루프 코스 생성 모듈 구현 (US-03).
     - 반려견 체급/건강상태별 보행 속도 매핑 기반 목표 보행 거리 자동 환산 엔진 및 $\pm 10\%$ 시간 수렴 라우터 검증 (US-16).
   * **Member D (Frontend)**:
     - 선호 노면 선택 칩 UI(흙길, 잔디길, 탄성포장, 보도블록) 및 에이전트 채팅 버블 컴포넌트 개발.
-    - 카메라 촬영/이미지 업로드 컴포넌트 구현.
+    - 공원 안내판 촬영 및 후기 사진 업로드 컴포넌트 구현.
   * **Member E (Infra/QA)**:
     - Supabase 기반 Long-term Memory CRUD API 구현 및 에이전트 연동 테스트 (US-06).
     - Sprint 1 리뷰 및 데모 진행 (중간 산출물 점검).
@@ -84,10 +85,11 @@
 * **팀원별 세부 구현 태스크**:
   * **Member A (AI Agent)**:
     - Long-term Memory 맥락 주입 파이프라인 결합 (과거 산책 피로도 및 질환 이력 반영).
-    - 비전 분석 결과와 라우팅 엔진 간의 위험 노면 우회 재탐색(Rerouting) 이벤트 체인 완성 (US-05).
+    - 공원 안내판 판독 결과(반려견 금지구역 Block)와 라우팅 엔진 간의 제약조건 주입 체인 완성.
   * **Member B (Vision AI)**:
-    - 실시간 산책 중 제보된 노면 사진의 위험도를 지도 메타데이터로 브로드캐스팅하는 핸들러 구현.
+    - `CommunityMapEnricher` 모듈 완성: 완주 후기 사진 노면 재질 판독, 신뢰도(0.85 임계치) 및 위험요소 검증 파이프라인 구현 (US-05).
   * **Member C (Backend/GIS)**:
+    - 완주 후기 비전 판독 결과(신뢰도 0.85 이상)를 바탕으로 DB 내 OSM Way의 surface 속성을 영구 보강하는 핸들러 연동 (US-05).
     - 전국공영주차장 표준 API 연동 모듈 개발 (출발지 인근 P&R 코스 도출) (US-13).
     - 추천 경로 GeoJSON 및 구간별 노면 속성 반환 REST API 최적화 (응답 지연 1.5초 이내 달성).
   * **Member D (Frontend)**:
@@ -106,7 +108,7 @@
   * **Member A (AI Agent)**:
     - 실사용자 대화 로그 모니터링, 프롬프트 인젝션 방어 가드레일 및 AI 시뮬레이션 고지 UI 검증 (US-10).
   * **Member B (Vision AI)**:
-    - 실사용자가 필드에서 업로드한 현장 노면 사진 판독 결과 실시간 모니터링 및 임계값 캘리브레이션.
+    - 실사용자가 필드에서 업로드한 공원 안내판 및 산책 후기 노면 사진 판독 결과 실시간 모니터링 및 임계값 캘리브레이션 (US-04, US-05).
   * **Member C (Backend/GIS)**:
     - Render / Cloud Run 프로덕션 환경 배포, 도메인 연결, CORS 설정 및 부하 테스트.
   * **Member D (Frontend)**:
@@ -126,7 +128,7 @@
     - 피드백 반영: "선호 노면 비중이 부족함" 의견 수용 → $W_{\text{pref}}$ 계수 0.5에서 0.35로 강화하여 재배포.
     - AI Agent 설계 근거 및 기술적 의사결정 보고서 정리.
   * **Member B (Vision AI)**:
-    - 피드백 반영: 그늘진 아스팔트의 노면 오분류 케이스 프롬프트 보정.
+    - 피드백 반영: 안내판 반사광/각도 왜곡 및 복합 노면(흙+자갈) 판독 프롬프트 보정.
   * **Member C (Backend/GIS)**:
     - 피드백 반영: 순환 코스 오차 허용범위 축소 (목표 거리 대비 $\pm 10\%$ 이내 튜닝).
   * **Member D (Frontend)**:
@@ -144,7 +146,7 @@
 | **Tester 1** | 말티즈 (4세, 슬개골 탈구 2기) | "흙길+잔디길" 선택 후 15분 코스 생성 및 산책 | 흙/잔디길 달성률, 관절 부담도 | 아스팔트 회피 페널티 3.0으로 상향 |
 | **Tester 2** | 골든 리트리버 (3세, 대형견) | "주차장 출발" 40분 원정 산책 코스 생성 및 산책 | 주차장 도보 접근성, 코스 만족도 | 공영주차장 연계 반경 1.5km로 확장 |
 | **Tester 3** | 푸들 (11세, 노령견) | 한낮 폭염 시 "탄성포장/흙길" 20분 코스 생성 | 지면열 체감, 보행 편의성 | 평지 우선 경사도 회피 가중치 보정 |
-| **Tester 4** | 웰시코기 (5세, 일반 보행) | 산책 중 노면 사진 촬영 제보 및 대체 경로 이동 | 비전 판독 속도, 리라우팅 적절성 | 비전 Structured Output 응답 시간 튜닝 |
+| **Tester 4** | 웰시코기 (5세, 일반 보행) | 공원 입구 종합안내판 촬영 업로드 및 산책 후기 사진 검증 | 안내판 판독 정확도, 후기 사진 노면 반영 속도 | 안내판 내 반려견 금지구역 파싱 프롬프트 보강 |
 | **Tester 5** | 비숑 프리제 (2세, 활동견) | n8n 골든타임 알림 수신 후 즉시 산책 완주 | 알림 적시성, 커뮤니티 공유 기능 | 알림 발송 시각을 골든타임 45분 전으로 조정 |
 
 ---

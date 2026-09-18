@@ -44,13 +44,13 @@
   * **TASK-02-4**: 선호 노면별(흙길 우선 vs 보도블록 우선) 대조 라우팅 단위 테스트 및 맵 뷰어 검증 (10h / Member C)
     - 동일 출발 좌표에서 선호도 옵션에 따라 분기된 경로가 정상 생성되는지 검증 리포트 작성.
 
-#### US-03: Waypoint 최적화 및 Routing API(ORS/OSRM) 연동 순환 라우팅 및 노면 추정 보정 (8 pt / 총 38h)
+#### US-03: Waypoint 최적화, Routing API(ORS/OSRM) 연동 및 토지피복도 노면 보정 (8 pt / 총 38h)
 * **담당**: Member C, A | **스프린트**: Sprint 1 (Week 1~2)
 * **상세 작업 분할 (Task Breakdown)**:
   * **TASK-03-1**: 테스트베드 OSM 도로망(.pbf) 파싱 및 NetworkX 그래프/인덱스 적재 파이프라인 구축 (10h / Member C)
     - 도보 통행 가능 링크(`highway=footway, pedestrian, path`) 추출 및 지오메트리 변환.
-  * **TASK-03-2**: OSM `surface` 결측치 Fallback 추정 규칙 모듈 구현 (8h / Member C)
-    - 공원 경계 내부 $\to$ `dirt`, 보행자길 $\to$ `paved`, 일반도로 $\to$ `asphalt` 매핑 및 `surface_source: estimated` 메타데이터 유지.
+  * **TASK-03-2**: 환경부 세분류 토지피복지도 GeoPandas Spatial Join 및 1.5km Seed 데이터셋 구축 (8h / Member C)
+    - 공원 내부 OSM 링크 지오메트리와 환경부 피복도 폴리곤(초지, 나지, 인공포장) 공간 결합, 결측치 80% 이상 고정밀 보정 및 항공·로드뷰 교차 검증 1.5km Seed 데이터셋 구축 (`surface_source` 5단계 투명성 태깅).
   * **TASK-03-3**: 다각형 경유지(Waypoint) 샘플링 및 Routing API(ORS/OSRM) 연동 순환 루프 생성 모듈 개발 (12h / Member C)
     - 단순 왕복(U턴) 방지 및 목표 거리 대비 $\pm 15\%$ 허용 오차 내 대안 루프 경로 산출.
   * **TASK-03-4**: 라우터 벤치마크 테스트 및 경로 생성 시간 2초 이내 최적화 (8h / Member C)
@@ -68,30 +68,29 @@
 
 ---
 
-### [Epic 2] 비전 멀티모달 현장 안전 진단
+### [Epic 2] 비전 멀티모달 안내판 분석 및 커뮤니티 지도 보강
 
-#### US-04: 비전 멀티모달 현장 노면 시각적 위험도 판독 (5 pt / 총 26h)
+#### US-04: 공원 종합안내판 비전 판독 및 산책 제약조건 도출 (5 pt / 총 26h)
 * **담당**: Member B | **스프린트**: Sprint 1 (Week 1~2)
 * **상세 작업 분할 (Task Breakdown)**:
-  * **TASK-04-1**: 노면 분류용 테스트 이미지셋(30장) 수집 및 Ground Truth 데이터셋 구축 (6h / Member B)
-    - 흙, 잔디, 아스팔트, 자갈, 깨진 유리, 공사 잔해 등 클래스별 샘플 라벨링.
+  * **TASK-04-1**: 공원 입구 종합안내판(15장) 및 노면 샘플 이미지 수집 및 벤치마크 데이터셋 구축 (6h / Member B)
+    - 보라매공원 등 공원 종합안내판 사진 수집, 노면 범례 및 반려견 출입 금지구역 Ground Truth 라벨링.
   * **TASK-04-2**: Gemini 1.5 Flash 비전 프롬프트 설계 및 Few-shot 최적화 (8h / Member B)
-    - 노면 유형 식별 및 시각적 위험물(유리, 뾰족한 파쇄석, 물 웅덩이, 파손) 검출 지침 명시 (※ 지면열은 기상 모델로 분리).
-  * **TASK-04-3**: Pydantic 기반 Structured JSON Output 파서 및 0~100 안전 점수 알고리즘 구현 (6h / Member B)
+    - `ParkBoardInspector` 시스템 프롬프트: 공원명, 흙길/산책로 범례 식별, 잔디마당/어린이놀이터 등 반려견 출입 금지구역 JSON 추출.
+  * **TASK-04-3**: Pydantic 기반 Structured JSON Output 파서 및 제약조건 변환 모듈 구현 (6h / Member B)
+    - `ParkBoardInspectionResult` 스키마 바인딩, `restricted_zones`를 라우팅 금지 노드로 자동 변환하는 어댑터 개발.
+  * **TASK-04-4**: 반사광/각도 왜곡 사진 예외 처리 및 안내판 판독 단위 테스트 자동화 (6h / Member B)
+    - 저조도/각도 왜곡 사진 입력 시 신뢰도 부족 경고 및 15장 테스트베드 안내판 데이터셋 기준 85% 이상 파싱 정확도 검증.
 
-    - `safety_score`, `primary_surface`, `hazard_detected`, `ai_comment` 스키마 고정.
-  * **TASK-04-4**: 저조도/블러 사진 예외 처리 및 단위 테스트 자동화 (6h / Member B)
-    - 신뢰도 저하 시 재촬영 안내 메시지 반환 및 이미지 20장 배치 평가 정확도 검증(85% 이상).
-
-#### US-05: 위험 노면 식별 시 경로 재탐색(Rerouting) 피드백 (3 pt / 총 16h)
+#### US-05: 완주 후기 사진 비전 검증 기반 지도 속성 영구 보강 (3 pt / 총 16h)
 * **담당**: Member B, C | **스프린트**: Sprint 2 (Week 3)
 * **상세 작업 분할 (Task Breakdown)**:
-  * **TASK-05-1**: 위험 판독 이벤트 수신 시 해당 도로 링크 가중치 5배 할증 핸들러 구현 (6h / Member C)
-    - `safety_score < 50` 판정 시 해당 지점 링크를 임시 기피 링크로 업데이트.
-  * **TASK-05-2**: AI Agent 재탐색 트리거 도구 연동 및 대안 경로 생성 체인 완성 (6h / Member A, B)
-    - 위험 구간 우회 사유를 자연어 코멘트로 생성하고 프론트엔드로 푸시.
-  * **TASK-05-3**: 사진 업로드부터 우회 경로 반환까지 E2E 통합 테스트 수행 (4h / Member B, C)
-    - 3초 이내에 우회 Polyline이 정상 렌더링되는지 확인.
+  * **TASK-05-1**: 산책 완주 후기 사진 노면 판독 및 신뢰도 검증 파이프라인 구현 (6h / Member B)
+    - Gemini Flash 기반 `CommunityMapEnricher`: 흙/잔디/자갈 노면 분류, `confidence >= 0.85` 임계치 판정 및 위험물(깨진 유리 등) 검출.
+  * **TASK-05-2**: OSM Way 노면 속성 영구 업데이트 및 신뢰도 미달 격리 핸들러 개발 (6h / Member C, B)
+    - 신뢰도 0.85 이상 시 DB 내 Way ID의 `surface`를 `community_verified`로 영구 갱신, 0.85 미만은 수동 검토 대기 큐로 격리.
+  * **TASK-05-3**: 완주 후기 사진 업로드부터 지도 속성 갱신 및 커뮤니티 피드 반영 E2E 테스트 (4h / Member B, C)
+    - 사진 업로드, 비전 검증, DB 링크 속성 갱신, 후기 등록 응답까지 2.5초 이내 완료 검증.
 
 ---
 
@@ -216,9 +215,9 @@
 |:---:|---|:---:|:---:|:---:|:---:|
 | **US-01** | 대화형 산책 목표 및 조건 입력 | Member A | 5 pt | 4개 | 24 h |
 | **US-02** | 사용자 선호 노면 재질 선택 및 가중치 적용 | Member C, A | 5 pt | 4개 | 28 h |
-| **US-03** | Waypoint 최적화 및 Routing API(ORS/OSRM) 연동 순환 라우팅 | Member C, A | 8 pt | 4개 | 38 h |
-| **US-04** | 비전 멀티모달 노면 위험도 판독 | Member B | 5 pt | 4개 | 26 h |
-| **US-05** | 위험 노면 식별 시 경로 재탐색 피드백 | Member B, C | 3 pt | 3개 | 16 h |
+| **US-03** | Waypoint 최적화, Routing API(ORS/OSRM) 연동 및 토지피복도 노면 보정 | Member C, A | 8 pt | 4개 | 38 h |
+| **US-04** | 공원 종합안내판 비전 판독 및 산책 제약조건 도출 | Member B | 5 pt | 4개 | 26 h |
+| **US-05** | 완주 후기 사진 비전 검증 기반 지도 속성 영구 보강 | Member B, C | 3 pt | 3개 | 16 h |
 | **US-06** | 반려견 프로필 및 산책 이력 기억 (Memory) | Member E, A | 3 pt | 3개 | 18 h |
 | **US-07** | 지도 시각화 및 외부 길찾기 연동 | Member D | 5 pt | 4개 | 26 h |
 | **US-08** | 실시간 GPS 트래킹 및 선호 노면 달성률 | Member D, C | 5 pt | 4개 | 26 h |

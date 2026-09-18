@@ -8,14 +8,16 @@
 ## 1. 아키텍처 개요 및 설계 원칙
 
 ### 1.1 핵심 설계 철학 (Architecture Principles)
-1. **AI Native 관점의 선택과 집중 (Agent-Tool Synergy)**:
-   - 지리 알고리즘을 바닥부터 재발명하지 않고, 검증된 라우팅 엔진(OpenRouteService, OSRM 등)을 LangGraph Agent의 도구(`@tool`)로 배치하여 Agent가 반려견 상태와 선호 노면을 분석해 최적 경유지(Waypoint)를 자율 결정합니다.
-2. **안정적인 계층형 분리 (Decoupled Layered Architecture)**:
+1. **AI Native 관점의 선택과 집중 (Agent-Tool Synergy & Land Cover Spatial Join)**:
+   - 원시 위성 영상의 무거운 CV 세그멘테이션(U-Net/SAM)이나 지리 알고리즘을 바닥부터 재발명하지 않고, **환경부 토지피복지도(Land Cover Map) 세분류 벡터 레이어와의 공간 결합(Spatial Join)** 및 검증된 라우팅 엔진(OpenRouteService)을 LangGraph Agent의 도구(`@tool`)로 배치하여 0.1초 만에 흙/잔디 비중이 극대화된 Waypoint를 자율 결정합니다.
+2. **실용적인 비전 AI 피벗 (Pragmatic Vision AI)**:
+   - 산책 중 리드줄을 잡고 발밑 1~2m를 촬영해 실시간 우회로를 찾는 비현실적 UX를 과감히 배제하고, **공원 입구 종합안내판 사전 판독(`ParkBoardInspector`)** 및 **산책 완주 후 커뮤니티 노면 제보 검증(`CommunityMapEnricher`)**을 통해 지도의 결측을 영구 보정하는 지속 가능한 데이터 선순환을 완성합니다.
+3. **안정적인 계층형 분리 (Decoupled Layered Architecture)**:
    - 프론트엔드(Next.js 모바일 웹)와 백엔드(FastAPI)를 명확한 REST API로 분리하여 복잡한 실시간 스트리밍 디버깅 병목을 줄이고 3주 차 조기 배포를 지원합니다.
-3. **엄격한 스키마 기반 데이터 무결성 (Schema-First Contract)**:
+4. **엄격한 스키마 기반 데이터 무결성 (Schema-First Contract)**:
    - 모든 데이터 교환은 Pydantic V2 BaseModel 및 TypeScript Type Contract를 기반으로 검증하여 런타임 결함을 원천 방지합니다.
-4. **현장 실사용 중심의 Fallback & 딥링크 (Pragmatic Mobile UX)**:
-   - 모바일 브라우저의 백그라운드 GPS 차단 정책을 수용하여, 무리한 백그라운드 추적 대신 **"노면 색상 프리뷰 + 네이버/카카오 지도 도보 길찾기 바로가기(딥링크) + 산책 완료 체크인"** 루프를 구축합니다.
+5. **현장 실사용 중심의 Fallback & 딥링크 (Pragmatic Mobile UX)**:
+   - 모바일 브라우저의 백그라운드 제약을 인정하고, **Screen Wake Lock API 기반 포켓 모드** 및 **상용 지도(네이버/카카오) 딥링크 바로가기**를 채택하여 현장 보행 편의성을 극대화합니다.
 
 ---
 
@@ -26,7 +28,7 @@ flowchart TB
     subgraph Client["[Client Tier] Next.js Mobile Web / PWA"]
         UI[UI Components & 칩 선택 인터페이스]
         MapModule[Mapbox GL JS 렌더러 & 노면 색상 Polyline]
-        CameraModule[현장 노면 카메라 캡처]
+        CameraModule[공원 안내판 / 완주 노면 제보 카메라]
         NaviDeepLink[외부 지도 네이버/카카오 딥링크]
     end
 
@@ -39,13 +41,14 @@ flowchart TB
     subgraph AI_Core["[AI & Intelligence Tier] LangGraph + Gemini"]
         Agent[Walk Planning ReAct Agent]
         State[LangGraph State Machine]
-        Vision[Gemini 1.5 Flash Vision Inspector]
+        Vision[Gemini 1.5 Flash Vision Inspector<br/>안내판 판독 & 제보 검증]
         MemoryManager[Canine Context Memory Injector]
     end
 
     subgraph Tools["[Agent Tool Registry] @tool"]
+        Tool_Spatial[LandCoverSpatialService<br/>토지피복 Spatial Join]
         Tool_Route[Surface Routing Tool / Waypoint Optimizer]
-        Tool_Vision[Surface Hazard Inspector Tool]
+        Tool_Vision[Park Board & Surface Hazard Tool]
         Tool_Parking[Public Parking API Tool]
         Tool_Memory[Dog Profile & History Tool]
     end
@@ -53,10 +56,11 @@ flowchart TB
     subgraph Data_Tier["[Data & Persistence Tier] Supabase"]
         PG[(PostgreSQL Relational DB)]
         VectorDB[(pgvector Semantic Memory)]
-        Storage[(Supabase Storage - 노면 사진)]
+        Storage[(Supabase Storage - 안내판/노면 사진)]
     end
 
     subgraph External["[External Services & Automation]"]
+        EGIS[환경부 EGIS: 토지피복지도 세분류 GeoJSON]
         ORS[Routing API Engine: ORS / OSRM]
         GovAPI[공공데이터포털: 전국공영주차장 / 기상청 단기예보]
         n8n[n8n Workflow: 지면열 연동 일일 골든타임 알림]
@@ -75,11 +79,13 @@ flowchart TB
     MemoryManager <--> PG
     MemoryManager <--> VectorDB
 
+    Agent --> Tool_Spatial
     Agent --> Tool_Route
     Agent --> Tool_Vision
     Agent --> Tool_Parking
     Agent --> Tool_Memory
 
+    Tool_Spatial <--> EGIS
     Tool_Route <--> ORS
     Tool_Parking <--> GovAPI
     Tool_Vision <--> Vision
@@ -97,7 +103,7 @@ flowchart TB
 * **프레임워크**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS
 * **주요 구성요소**:
   1. **Planner Screen**:
-     - 반려견 선택 드롭다운, 목표 산책 시간 슬라이더, 선호 노면 선택 칩(흙길/잔디/우레탄/보도블록).
+     - 반려견 선택 드롭다운, 목표 산책 시간 슬라이더(15~120분), 선호 노면 선택 칩(흙길/잔디/우레탄/보도블록).
   2. **Mapbox Route Viewer**:
      - GeoJSON 기반 구간별 노면 속성 분기 렌더링:
        - 🌿 잔디: `#10B981` (Green-500)
@@ -110,22 +116,22 @@ flowchart TB
      - 초절전 포켓 모드(다크 락스크린) 및 OS 절전 복귀 시 추천 경로 도로망 스냅 보정(Dead Reckoning).
   4. **Navi Launcher (Fallback)**:
      - 네이버 지도 앱(`nmap://route/walk`) 및 카카오맵(`kakaomap://route`) 도보 길찾기 URL 스킴 바로가기.
-  5. **Camera & Check-in Modal**:
-     - 모바일 웹 카메라 촬영 ➔ WebP 압축 ➔ 백엔드 비전 업로드 ➔ 위험도 점수 출력.
-     - 산책 완주 후 노면 만족도 별점(1~5) 및 실제 노면 일치도 체크인.
+  5. **Camera Modal (안내판 & 노면 제보)**:
+     - 공원 입구 오프라인 안내판 촬영 ➔ `POST /api/walks/inspect-board` 전송.
+     - 산책 완주 후 노면 제보 사진 촬영 ➔ WebP 압축 ➔ `POST /api/walks/verify-surface` 전송.
 
 ---
 
 ### 3.2 백엔드 및 API 계층 (Backend Tier)
-* **프레임워크**: Python 3.11+, FastAPI, Uvicorn, Pydantic V2, HTTPX
+* **프레임워크**: Python 3.11+, FastAPI, Uvicorn, Pydantic V2, HTTPX, GeoPandas, Shapely
 * **API 엔드포인트 명세 (핵심 REST Contract)**:
 
 | Method | Endpoint | 설명 | 핵심 입출력 DTO |
 |:---:|---|---|---|
-| `POST` | `/api/walks/plan` | 반려견 맞춤형 산책 코스 생성 | In: `WalkPlanRequest` ➔ Out: `WalkPlanResponse(GeoJSON)` |
-| `POST` | `/api/surface/analyze` | 현장 노면 이미지 시각적 위험 진단 | In: `UploadFile(Image)` ➔ Out: `SurfaceInspectionResult` |
-| `POST` | `/api/walks` | 산책 완주 기록 저장 (주머니 보관 연속 수신 & 스냅 보정) | In: `WalkRecordCreate` ➔ Out: `WalkRecordResponse` |
-
+| `POST` | `/api/walks/plan` | 목표 시간·선호 노면·토지피복 결합 맞춤 코스 생성 | In: `WalkPlanRequest` ➔ Out: `WalkPlanResponse(GeoJSON)` |
+| `POST` | `/api/walks/inspect-board` | 공원 입구 종합안내판 비전 판독 (사전 분석) | In: `UploadFile(Image)` ➔ Out: `ParkBoardInspectionResult` |
+| `POST` | `/api/walks/verify-surface` | 완주 후 견주 노면 제보 비전 검증 (지도 보정) | In: `UploadFile(Image), link_id` ➔ Out: `SurfaceEnrichmentResult` |
+| `POST` | `/api/walks` | 산책 완주 기록 저장 (주머니 연속 수신 & 스냅 보정) | In: `WalkRecordCreate` ➔ Out: `WalkRecordResponse` |
 | `GET` | `/api/walks/{id}` | 산책 기록 상세 조회 | Out: `WalkRecordDetail` |
 | `POST` | `/api/walks/{id}/favorite` | 안심 산책로 즐겨찾기(북마크) 토글 (추가/해제) | In: `FavoriteToggleRequest` ➔ Out: `FavoriteToggleResponse` |
 | `GET` | `/api/favorites` | 사용자 저장 즐겨찾기 코스 목록 조회 | Out: `List[FavoriteWalkSummary]` |
@@ -154,8 +160,9 @@ stateDiagram-v2
     MemoryFetch --> ToolExecution: 과거 산책 이력 & 건강 주의 상태 주입
     
     state ToolExecution {
-        [*] --> SampleWaypoints: 목표 시간/거리 기준 Loop Waypoint 샘플링
-        SampleWaypoints --> CalculateSurfaceCost: 노면 가중치 비용 모델 적용
+        [*] --> SampleWaypoints: 목표 시간/속도 기준 Loop Waypoint 샘플링
+        SampleWaypoints --> LandCoverSpatialJoin: 환경부 토지피복지도 공간 결합
+        LandCoverSpatialJoin --> CalculateSurfaceCost: 노면 가중치 비용 모델 적용
         CalculateSurfaceCost --> QueryRoutingAPI: Routing API Provider 호출
     }
     
@@ -164,50 +171,79 @@ stateDiagram-v2
     GenerateResponse --> [*]: WalkPlanResponse 반환
 ```
 
-#### 2. 노면 안전 비전 파이프라인 (Gemini 1.5 Flash)
-* **입력**: 모바일 현장 촬영 노면 이미지
-* **역할 제한**: **사진만으로 실제 지면 온도를 측정하지 않으며**, 시각적으로 확인 가능한 노면 종류, 물/얼음/진흙, 파손, 뾰족한 파쇄석, 유리 조각 등 물리적 위험에 집중합니다. (지면 열 위험은 기상청 단기예보 기반 별도 모델에서 계산)
-* **출력 스키마 (Structured Output)**:
-  ```json
-  {
-    "primary_surface": "asphalt | dirt | grass | rubber | paved | gravel",
-    "safety_level": "SAFE | MEDIUM | DANGER",
-    "safety_score": 75,
-    "hazard_detected": true,
-    "hazards": ["puddle", "sharp_stones"],
-    "confidence": 0.88,
-    "ai_comment": "노면 가장자리에 작은 파쇄석과 물 웅덩이가 관찰되어 주의가 필요합니다."
-  }
-  ```
-* **피드백 체인**: `safety_score < 40` 또는 치명적 위험물 검출 시 해당 좌표를 차단하고 우회 경로(`/api/walks/plan` 재호출)를 트리거.
+#### 2. 멀티모달 비전 파이프라인 (Gemini 1.5 Flash)
+비전 모델은 산책 중 비현실적인 실시간 촬영 우회 대신 **"사전 공원 안내판 판독"**과 **"완주 후 커뮤니티 노면 제보 검증"**의 2대 축으로 운용됩니다.
 
+1. **공원 종합안내판 판독 (`ParkBoardInspectionResult`)**:
+   ```json
+   {
+     "park_name": "보라매공원",
+     "has_dirt_trail": true,
+     "has_grass_zone": true,
+     "dog_restricted_zones": ["생태연못 관찰데크", "어린이 놀이터"],
+     "detected_surfaces": ["dirt", "grass", "rubber", "paved"],
+     "confidence_score": 0.92,
+     "summary_comment": "공원 둘레에 비포장 흙길 산책로가 조성되어 있으며 북동쪽 잔디마당 이용이 가능합니다."
+   }
+   ```
+2. **커뮤니티 노면 제보 검증 (`SurfaceEnrichmentResult`)**:
+   ```json
+   {
+     "verified_surface": "dirt",
+     "is_safe_for_paws": true,
+     "hazard_detected": false,
+     "hazards": [],
+     "confidence": 0.89,
+     "admin_approval_suggested": true
+   }
+   ```
 
 ---
 
-### 3.4 노면 가중치 순환 라우팅 엔진 (Spatial Cost Model)
+### 3.4 노면 가중치 순환 라우팅 엔진 및 공간 결합 서비스 (Spatial Cost Model)
 
-#### 1. 수학적 비용 모델 공식
+#### 1. 환경부 토지피복지도 기반 공간 결합 서비스 (`LandCoverSpatialService`)
+원시 위성 영상의 무거운 CV 처리를 배제하고, 환경부(EGIS) 토지피복 세분류 벡터와 도시공원 폴리곤을 공간 결합하여 0.1초 만에 링크 속성을 판정합니다.
+
+```python
+class LandCoverSpatialService:
+    def resolve_link_surface(self, link_geom: LineString, osm_surface: Optional[str] = None) -> tuple[SurfaceType, SurfaceSourceType, float]:
+        # 1. 시드 검증 데이터 또는 OSM 명확 태그 우선
+        if osm_surface in ["dirt", "ground", "earth"]:
+            return SurfaceType.DIRT, SurfaceSourceType.SEED_VERIFIED, 0.95
+        # 2. 환경부 토지피복지도 공간 교차 검사 (초지=잔디, 나지=흙길, 인공포장=아스팔트)
+        intersected = self.land_cover_gdf[self.land_cover_gdf.intersects(link_geom)]
+        if not intersected.empty:
+            dominant_cover = intersected.iloc[0].get("cover_code", "")
+            if dominant_cover in ["초지", "grassland"]:
+                return SurfaceType.GRASS, SurfaceSourceType.LAND_COVER_MAP, 0.90
+            elif dominant_cover in ["나지", "bare_soil"]:
+                return SurfaceType.DIRT, SurfaceSourceType.LAND_COVER_MAP, 0.90
+        # 3. 도시공원 폴리곤 내부 Fallback (흙길 기본 추정)
+        if not self.park_gdf[self.park_gdf.intersects(link_geom)].empty:
+            return SurfaceType.DIRT, SurfaceSourceType.PARK_POLYGON, 0.75
+        # 4. 일반 도로망 Fallback
+        return SurfaceType.PAVED, SurfaceSourceType.ESTIMATED_FALLBACK, 0.50
+```
+
+#### 2. 수학적 비용 모델 공식
 보행 네트워크 그래프 $G=(V, E)$에서 임의 링크 $e$의 통행 비용:
 $$\text{Cost}(e) = \text{Length}(e) \times W_{\text{base}}(\text{surface}(e)) \times W_{\text{pref}}(\text{surface}(e), \text{SelectedPref})$$
 
-#### 2. 가중치 매트릭스 (Weight Matrix)
-| 노면 유형 (`surface`) | 기본 가중치 ($W_{\text{base}}$) | 선호 선택 시 할인 ($W_{\text{pref}}$) | 최종 유효 가중치 |
-|---|:---:|:---:|:---:|
-| **잔디길 (Grass)** | 0.6 | **0.45** | **0.27 (최우선 탐색)** |
-| **흙길 (Dirt/Ground)** | 0.6 | **0.45** | **0.27 (최우선 탐색)** |
-| **탄성포장 (Rubber)** | 0.7 | **0.50** | **0.35 (적극 반영)** |
-| **보도블록 (Paved)** | 1.0 | 0.80 (선택 시) / 1.0 (중립) | 0.80 ~ 1.00 (표준) |
-| **아스팔트 (Asphalt)** | 2.5 | 1.0 (할인 없음) | 2.50 (지면열/딱딱함 페널티) |
-| **자갈/파쇄석 (Gravel)** | 3.5 | 1.0 (할인 없음) | 3.50 (발바닥 끼임 강한 기피) |
+#### 3. 가중치 매트릭스 (Weight Matrix)
+| 노면 유형 (`surface`) | 기본 가중치 ($W_{\text{base}}$) | 선호 선택 시 할인 ($W_{\text{pref}}$) | 최종 유효 가중치 | 환경부 토지피복 매핑 |
+|---|:---:|:---:|:---:|---|
+| **잔디길 (Grass)** | 0.6 | **0.45** | **0.27 (최우선 탐색)** | 초지 (Grassland) |
+| **흙길 (Dirt/Ground)** | 0.6 | **0.45** | **0.27 (최우선 탐색)** | 나지 (Bare Soil) |
+| **탄성포장 (Rubber)** | 0.7 | **0.50** | **0.35 (적극 반영)** | 트랙 및 탄성 포장지 |
+| **보도블록 (Paved)** | 1.0 | 0.80 (선택 시) / 1.0 (중립) | 0.80 ~ 1.00 (표준) | 인공포장 보행로 |
+| **아스팔트 (Asphalt)** | 2.5 | 1.0 (할인 없음) | 2.50 (지면열 페널티) | 인공포장 일반도로 |
+| **자갈/파쇄석 (Gravel)** | 3.5 | 1.0 (할인 없음) | 3.50 (발바닥 끼임 기피) | 미포장 거친 자갈지대 |
 
-#### 3. 순환 경로(Loop Route) 생성 및 평가 원칙
-1. **반경 산출**: $R = \frac{\text{TargetDistance}}{2\pi \times 1.2}$
-2. **다각형 경유지(Waypoint) 샘플링**: 출발 좌표 $(lat_0, lon_0)$를 중심으로 각도 $\theta$를 $120^\circ$ 또는 $90^\circ$씩 회전하며 2~3개의 중간 경유지 선정.
-3. **가중치 매핑 라우팅**: 각 경유지를 잇는 구간에 노면 비용 함수를 적용하여 표준 라우팅 API 도구를 호출한 뒤 출발점으로 귀환하는 폐곡선(Loop) 도출.
-4. **선호 노면 비율 유연화 및 투명성**:
-   - 도심지 등 특정 환경의 링크 한계로 인해 **"선호 노면 50% 무조건 보장"을 강제하지 않음**.
-   - 가용 후보 경로 중 선호 노면 비율을 최대화하며, 목표 미달 시 사유(예: "주변 잔디/흙길 부족으로 38% 구성")를 사용자에게 제공.
-   - OSM 결측치 추정 노면은 실측값처럼 확정하지 않고 `surface_source: estimated`, `surface_confidence`를 메타데이터로 함께 반환.
+#### 4. 순환 경로(Loop Route) 생성 및 노면 투명성 원칙
+1. **반경 산출**: $R = \frac{\text{TargetDistance}}{2\pi \times 1.2}$ (반려견 속도 기준 환산 거리 반영)
+2. **다각형 경유지(Waypoint) 샘플링**: 출발점 기준 $\theta$ 각도 회전하며 2~3개 Waypoint 선정 후 토지피복 공간 가중치 적용.
+3. **노면 출처 투명성**: 각 링크별로 `surface_source`(`seed_verified`, `land_cover_map`, `park_polygon`, `community_verified`, `estimated`) 및 `confidence`를 메타데이터로 함께 반환.
 
 ---
 
@@ -264,12 +300,14 @@ erDiagram
     SURFACE_REPORTS {
         uuid id PK
         uuid user_id FK
+        string report_type "park_board or community_review"
         float latitude
         float longitude
         string photo_url
-        string detected_surface
-        int safety_score
-        string[] hazards
+        string detected_surface "검증/인식 노면"
+        float confidence "비전 신뢰도 0.0~1.0"
+        string[] restricted_zones "반려견 출입금지 구역"
+        string osm_way_id "연계 도로/산책로 ID"
         timestamp created_at
     }
 
@@ -298,7 +336,7 @@ sequenceDiagram
     participant RouterTool as Routing Tool (ORS)
 
     User->>Front: 선호 노면 선택(흙/잔디) & 20분 코스 요청
-    Front->>API: POST /api/v1/walk/plan
+    Front->>API: POST /api/walks/plan
     API->>Agent: Run WalkPlanningGraph(input)
     Agent->>Mem: 견공 건강 프로필 & 최근 5회 산책 이력 조회
     Mem-->>Agent: 슬개골 2기, 아스팔트 기피, 흙길 선호 맥락 주입
@@ -314,27 +352,48 @@ sequenceDiagram
     end
 ```
 
-### 4.2 현장 노면 사진 진단 및 회피 리라우팅 플로우
+### 4.2 비전 AI 특화 플로우 (Vision AI Workflows)
+
+#### 4.2.1 공원 종합안내판 비전 분석 및 코스 제약조건 도출 (산책 전)
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 견주 (산책 중)
+    actor User as 견주 (공원 입구)
     participant Front as Next.js Frontend
     participant API as FastAPI Backend
-    participant Vision as Gemini Flash Inspector
+    participant Vision as Gemini Flash (ParkBoardInspector)
     participant Agent as LangGraph Agent
 
-    User->>Front: 산책로 파쇄석/공사 현장 사진 촬영
-    Front->>API: POST /api/v1/surface/inspect (Multipart Image)
-    API->>Vision: Multimodal Analysis (Structured JSON)
-    Vision-->>API: {surface: 'gravel', safety_score: 30, hazards: ['sharp_stone']}
-    API-->>Front: 위험 경고 모달 표시 (안전점수 30점)
-    
-    User->>Front: [안전한 우회로 재탐색] 클릭
-    Front->>API: POST /api/v1/walk/reroute (현위치, blocked_point)
-    API->>Agent: RerouteWithHazardAvoidance(blocked_point)
-    Agent-->>API: 우회 순환 경로 도출
-    API-->>Front: 갱신된 GeoJSON 반환 및 지도 즉각 업데이트
+    User->>Front: 공원 종합안내판 사진 촬영 및 업로드
+    Front->>API: POST /api/walks/inspect-board (Multipart Image)
+    API->>Vision: ParkBoardInspection Schema 질의 (공원명/노면범례/반려견제한구역)
+    Vision-->>API: ParkBoardInspectionResult (흙길 산책로, 반려견 금지 잔디마당)
+    API->>Agent: 안내판 제약조건 반영 (금지 구역 제외 & 흙길 Waypoint 우선화)
+    Agent-->>API: 안전 맞춤형 공원 순환 경로 반환
+    API-->>Front: 안내판 분석 결과 요약 모달 + 맞춤 추천 경로 렌더링
+```
+
+#### 4.2.2 산책 후기 커뮤니티 사진 검증 및 지도 속성 보강 (산책 후)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 견주 (산책 완료 후)
+    participant Front as Next.js Frontend
+    participant API as FastAPI Backend
+    participant Vision as Gemini Flash (CommunityMapEnricher)
+    participant DB as Supabase (OSM Cache / Metadata)
+
+    User->>Front: 산책 완료 후기 작성 (노면 현장 사진 첨부)
+    Front->>API: POST /api/walks/verify-surface (Multipart Image, link_id)
+    API->>Vision: SurfaceEnrichment Schema 질의 (노면 분류/신뢰도/위험요소)
+    Vision-->>API: SurfaceEnrichmentResult (surface='dirt', confidence=0.92, hazards=[])
+    alt 신뢰도 >= 0.85
+        API->>DB: 해당 Way ID의 surface 속성 영구 업데이트 ('dirt', source='community_verified')
+        API-->>Front: "커뮤니티 지도 기여 완료 (+포인트/뱃지)" & 후기 등록 완료 응답
+    else 신뢰도 < 0.85
+        API->>DB: 검토 대기 큐 적재 (수동 확인 대상)
+        API-->>Front: 후기 등록 완료 (단독 지도 반영은 보류)
+    end
 ```
 
 ---
@@ -354,12 +413,14 @@ sequenceDiagram
 ## 6. 비기능 요구사항(NFR) 및 보안 가드레일 설계
 
 1. **응답 시간 최적화 (Latency)**:
-   - 복합 산책로 생성 요청은 5초 이내 완료 (GIS 라우팅 연산 1.5초 + Agent 오케스트레이션 2초 이내).
-   - 비전 판독은 Gemini Flash 기반 경량화로 2.5초 이내 완료.
+   - 복합 산책로 생성 요청은 5초 이내 완료 (토지피복 Spatial Join 0.1초 + GIS 라우팅 연산 1.5초 + Agent 오케스트레이션 2초 이내).
+   - 비전 판독(안내판/커뮤니티 사진)은 Gemini Flash 기반 경량화로 2.5초 이내 완료.
 2. **모바일 웹 안정성 및 메모리 관리**:
+   - Screen Wake Lock API를 활용하여 산책 중 화면 꺼짐 방지 및 백그라운드 GPS 로깅 안정성 확보.
    - 컴포넌트 언마운트 시 Mapbox 지도 인스턴스 `map.remove()` 필수 호출로 장시간 사용 시 브라우저 탭 크래시 방지.
 3. **AI 안전장치 및 윤리적 고지 (Safety Guardrails)**:
    - 생성된 경로는 실시간 교통/공사 상황에 따라 달라질 수 있음을 화면 상단에 명시 (`AI 생성 경로 알림`).
-   - 비전 분석 점수가 40점 미만인 경우 즉시 견주에게 "우회 권장" 시각적 뱃지 노출.
+   - 비전 분석 시 신뢰도 0.85 미만 데이터는 지도 속성에 자동 반영하지 않고 검토 대기 큐로 격리.
+   - 안내판 판독 결과 반려견 출입 금지 구역 감지 시 해당 세그먼트를 라우팅 금지(Block) 영역으로 강제 격리.
 4. **테스트 동기화 및 5인 CBT 검증 무결성**:
    - 요구사항(User Story/Task) 수정 시 연계된 테스트케이스(인수조건 검증, Fixture)를 즉각 갱신하여 5인 CBT 시나리오의 100% 정상 작동을 보장.

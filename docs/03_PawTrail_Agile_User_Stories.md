@@ -21,8 +21,8 @@
 | **US-01** | 코어 플래닝 | 대화형 산책 목표 및 조건 입력 | Must | 중 | 5 pt | Sprint 1 |
 | **US-02** | 코어 플래닝 | **사용자 선호 노면 재질 선택 및 가중치 적용** | Must | 중상 | 5 pt | Sprint 1 |
 | **US-03** | 코어 플래닝 | Waypoint 최적화 및 Routing API(ORS/OSRM) 연동 순환 라우팅 | Must | 상 | 8 pt | Sprint 1 |
-| **US-04** | 노면 안전 AI | 비전 멀티모달 현장 노면 위험도 판독 | Must | 중 | 5 pt | Sprint 1 |
-| **US-05** | 노면 안전 AI | 위험 노면 식별 시 경로 재탐색(Rerouting) 피드백 | Must | 중 | 3 pt | Sprint 2 |
+| **US-04** | 노면 안전 AI | **비전 멀티모달 공원 종합안내판 판독 (`ParkBoardInspector`)** | Must | 중 | 5 pt | Sprint 1 |
+| **US-05** | 노면 안전 AI | **완주 후 커뮤니티 노면 제보 검증 및 지도 보정 (`CommunityMapEnricher`)** | Must | 중 | 3 pt | Sprint 2 |
 | **US-06** | 개인화 맥락 | 반려견 건강 프로필 및 과거 산책 이력 기억 (Memory) | Must | 하 | 3 pt | Sprint 1 |
 | **US-07** | 인터페이스 | 지도 기반 추천 경로 시각화 및 외부 길찾기 연동 | Must | 중 | 5 pt | Sprint 2 |
 | **US-08** | 기록 & 공유 | 주머니 보관 지속 GPS 트래킹 및 선호 노면 달성률 기록 | Must | 중 | 5 pt | Sprint 2 |
@@ -73,10 +73,11 @@
 * **인수 조건 (Acceptance Criteria)**:
   1. "Waypoint 최적화 및 Routing API(ORS/OSRM) 연동 순환 라우팅" 방식을 채택하여, Agent가 Waypoint 후보를 선정한 뒤 표준 Routing API를 호출하고 노면 가중치 비용 평가를 거쳐 순환 루프 경로를 도출한다.
   2. 생성된 전체 경로 거리는 사용자의 목표 거리 대비 $\pm 15\%$ 이내 오차를 유지한다.
-  3. OSM 데이터 내 `surface` 결측 시 Fallback 룰(공원 내부=흙길, 보행자도로=보도블록, 일반도로=아스팔트)로 추정하되, 실측값처럼 표시하지 않고 추정 정보(`surface_source`, `surface_confidence`)를 유지한다.
+  3. **환경부 토지피복지도(Land Cover Map) 세분류 Spatial Join 적용**: 도로 링크와 환경부 토지피복 레이어 및 도시공원 폴리곤을 공간 결합하여 결측 링크의 노면 재질을 0.1초 만에 산정한다. 5인 CBT 시범구역은 사전 구축된 정사영상 육안 검증 시드(Seed) 데이터를 최우선 적용한다.
+  4. 데이터 출처는 메타데이터(`surface_source: seed_verified | land_cover_map | park_polygon | community_verified | estimated`)로 투명하게 반환한다.
 * **완료 정의 (DoD)**:
   - [ ] 10개 좌표 샘플에 대해 순환 경로 생성 연산이 2초 이내에 완료.
-  - [ ] 결측 링크 포함 구역에서 런타임 NullPointer 또는 가중치 계산 오류가 발생하지 않음.
+  - [ ] `LandCoverSpatialService` 공간 결합 단위 테스트 및 노면 출처 메타데이터 검증 완료.
 
 #### US-16: 사용자 지정 산책 시간(Target Duration) 기반 맞춤형 코스 생성
 * **사용자 스토리**:  
@@ -94,25 +95,29 @@
 
 ### [Epic 2] 비전 멀티모달 현장 안전 진단
 
-#### US-04: 비전 멀티모달 현장 노면 시각적 위험도 판독
+#### US-04: 비전 멀티모달 공원 종합안내판 판독 (`ParkBoardInspector`)
 * **사용자 스토리**:  
-  *견주로서*, 나는 산책 중 마주친 바닥 사진을 찍어 올려 위험 여부를 확인받고 싶다. *그리하여* 깨진 유리, 물/진흙 웅덩이, 파손, 뾰족한 파쇄석으로부터 반려견 발바닥 부상을 예방하기를 원한다. (※ 사진으로 실제 지면 온도를 측정하지 않으며, 열 위험은 기상 데이터 모델로 분리)
+  *견주로서*, 공원 입구에 도착했을 때 종합안내판 사진을 찍어 올리고 싶다. *그리하여* 공원 내 흙길/잔디마당의 정확한 위치와 반려견 출입 금지 구역(생태보존지역 등)을 사전에 시각적으로 파악하고 안전하게 코스에 반영하기를 원한다.
 * **우선순위**: Must | **난이도**: 중 | **Story Points**: 5 pt | **담당**: Member B (Vision AI)
 * **인수 조건 (Acceptance Criteria)**:
-  1. 사진 업로드 시 Gemini 1.5 Flash가 노면 재질과 시각적 위험물(유리, 파쇄석, 물 웅덩이, 파손 등)을 3초 이내 분석한다.
-  2. 구조화된 JSON 형태로 `primary_surface`, `safety_score`(0~100), `hazard_detected`, `ai_comment`를 출력한다.
+  1. 공원 입구 오프라인 종합안내판 사진 업로드 시 Gemini 1.5 Flash가 산책로 범례(흙길, 잔디밭, 포장로)와 반려견 출입 금지 구역을 3초 이내에 시각 분석한다.
+  2. 구조화된 JSON 스키마(`ParkBoardInspectionResult`: `has_dirt_trail`, `has_grass_zone`, `dog_restricted_zones`, `detected_surfaces`, `confidence_score`, `summary_comment`)를 반환한다.
+  3. 분석 결과는 즉시 플래너 에이전트의 구역 제약 조건으로 전달되어 출입 금지 구역을 자동 회피하고 흙길 진입로를 우선 경유하도록 경로 생성을 보정한다.
 * **완료 정의 (DoD)**:
-  - [ ] 샘플 노면 이미지 20장에 대해 위험 점수 판별 정확도 85% 이상 달성.
-  - [ ] Pydantic 모델 파싱 실패 시 기본 경고 안내를 반환하는 예외 처리 구현.
+  - [ ] 공원 안내판 테스트 이미지 10종 대상 산책로/출입제한 식별 단위 테스트 통과.
+  - [ ] REST API 엔드포인트(`POST /api/walks/inspect-board`) 연동 완료 및 평균 판독 지연 2.5초 이내.
 
-#### US-05: 위험 노면 식별 시 경로 재탐색(Rerouting) 피드백
+#### US-05: 완주 후 커뮤니티 노면 제보 비전 검증 및 지도 속성 보정 (`CommunityMapEnricher`)
 * **사용자 스토리**:  
-  *사용자로서*, 내가 제보한 노면 사진이 위험한 것으로 판명되면 즉시 대체 우회 경로를 안내받고 싶다. *그리하여* 부상 위험 지역을 지나지 않고 산책을 안전하게 마칠 수 있기를 원한다.
+  *견주로서*, 산책을 완주한 후 "이 구간 흙길이었음" 또는 "공사로 파쇄석 깔림"과 같은 사진 후기를 남기고 싶다. *그리하여* 비전 AI가 이를 자동 검증해 지도 데이터를 지속적으로 최신화하고 다른 견주들과 안전한 노면 정보를 나누기를 원한다.
 * **우선순위**: Must | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member B, C (Vision/GIS)
 * **인수 조건 (Acceptance Criteria)**:
-  1. `safety_score`가 50점 미만인 경우, 해당 좌표 링크의 보행 비용을 5배 가산하여 우회 경로를 즉시 재계산한다.
+  1. 완주 후 견주가 특정 링크에 사진 제보 등록 시, Gemini 1.5 Flash가 실제 노면 재질(`dirt`, `grass`, `rubber`, `paved`, `asphalt`, `gravel`)과 발바닥 부상 위험물(유리, 뾰족한 파쇄석 등)을 자동 검증한다.
+  2. 구조화된 JSON 스키마(`SurfaceEnrichmentResult`: `verified_surface`, `is_safe_for_paws`, `hazard_detected`, `confidence`, `admin_approval_suggested`)를 반환한다.
+  3. 판독 신뢰도 0.85 이상 시 해당 도로 링크의 노면 메타데이터(`surface_source: community_verified`)를 영구 갱신하고, 부상 위험물 검출 시 해당 링크에 회피 가중치(5.0)를 부여한다.
 * **완료 정의 (DoD)**:
-  - [ ] 사진 판독 결과와 라우터 간 E2E 재탐색 API 통합 테스트 통과.
+  - [ ] 커뮤니티 노면 제보 사진 20장 대상 비전 재질 분류 정확도 85% 이상 검증.
+  - [ ] REST API 엔드포인트(`POST /api/walks/verify-surface`) 연동 및 DB 링크 속성 갱신 통합 테스트 통과.
 
 ---
 
