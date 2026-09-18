@@ -25,8 +25,11 @@
 6. **[코드 무결성 및 사후 정리 의무]**:
    - 디버깅용 임시 로그나 목(Mock) 데이터는 문제 해결 즉시 완전히 제거하여 프로덕션 코드베이스의 100% 무결성을 회복합니다.
 7. **[사용자 스토리 및 Task 변경 시 테스트케이스 동기화 의무 (필수)]**:
-   - 구현 과정에서 사용자 스토리(US-01~US-13), 인수 조건(Acceptance Criteria), 완료 정의(DoD) 또는 하위 구현 Task의 요구사항, 비즈니스 룰, 파라미터가 변경·추가·조정될 경우, **반드시 이에 대응하는 테스트케이스(단위/통합/시나리오 테스트)를 즉시 최신 상태로 갱신·추가·동기화**해야 합니다.
+   - 구현 과정에서 사용자 스토리(US-01~US-16), 인수 조건(Acceptance Criteria), 완료 정의(DoD) 또는 하위 구현 Task의 요구사항, 비즈니스 룰, 파라미터가 변경·추가·조정될 경우, **반드시 이에 대응하는 테스트케이스(단위/통합/시나리오 테스트)를 즉시 최신 상태로 갱신·추가·동기화**해야 합니다.
    - 테스트케이스를 과거 상태로 방치한 채 구현 코드만 수정하는 행위("깨진 유리창" 방치)를 엄격히 금지하며, 변경된 테스트케이스의 통과 여부를 반드시 실행하여 검증합니다.
+8. **[Git 브랜치 분기 및 Merge Request(MR) 협업 워크플로우 준수 (필수)]**:
+   - `main` 또는 `develop` 브랜치에 직접 커밋/푸시(Direct Push)하는 행위를 엄격히 금지합니다.
+   - 모든 개발 작업은 반드시 작업 단위별 별도의 `feature/` 브랜치를 생성하여 독립적으로 진행하며, 개발 및 자체 테스트가 완료된 후 타깃 브랜치(`develop`)로 Merge Request(MR)를 생성하여 코드 리뷰를 거쳐 병합합니다.
 
 ---
 
@@ -198,12 +201,55 @@ $$\text{Cost}(e) = \text{Length}(e) \times W_{\text{base}}(\text{surface}(e)) \t
 
 ---
 
-## [Gemini 실행 가이드라인] 코드 제안 시 5단계 필수 검증
+## [핵심 원칙 8] Git 브랜치 전략 및 Merge Request(MR) 협업 워크플로우 (Branching & MR Guidelines)
 
-Gemini는 코드를 제안하거나 수정할 때 다음 5단계를 내부적으로 검증한 후 답변을 출력합니다.
+PawTrail 팀의 병렬 개발 생산성과 코드베이스 무결성을 유지하기 위해, 모든 팀원과 AI 지원 도구는 아래의 Git-flow 기반 브랜칭 및 Merge Request(MR) 협업 절차를 엄격히 준수해야 합니다.
 
-1. **[목적 검증]**: 이 코드가 PawTrail의 사용자 스토리(US-01~US-13) 및 기획 의도와 완벽히 부합하며, 불필요한 오버엔지니어링(YAGNI)을 배제했는가?
+### 1. 기본 브랜치 운영 원칙
+- **`main`**: 프로덕션 배포용 기준 브랜치 (태깅 및 릴리스 전용, 상시 배포 가능한 무결성 유지).
+- **`develop`**: 스프린트 개발 통합 브랜치 (모든 기능 브랜치가 통합·검증되는 기준선).
+- **`main` 및 `develop` 직접 푸시(Direct Push) 절대 금지**: 모든 변경사항은 반드시 Merge Request(MR / PR)를 통해서만 병합됩니다.
+
+### 2. feature 브랜치 생성 및 작업 규칙
+- **분기 기준점**: 항상 최신 `develop` 브랜치(`git checkout develop && git pull origin develop`)로부터 분기합니다.
+- **브랜치 명명 규칙 (Branch Naming Convention)**:
+  - **신규 기능 개발**: `feature/{member}-{task-id}` 또는 `feature/{story-id}-{feature-name}`  
+    *예시: `feature/member-a-us01-agent`, `feature/member-c-us03-landcover`, `feature/us16-target-duration`*
+  - **결함/버그 수정**: `fix/{issue-id}-{issue-summary}`  
+    *예시: `fix/gps-drift-dead-reckoning`, `fix/safari-wakelock-fallback`*
+  - **리팩토링 / 성능 개선**: `refactor/{target-module}`  
+    *예시: `refactor/surface-cost-service`, `refactor/mapbox-canvas`*
+  - **문서화 / 산출물 동기화**: `docs/{doc-name}`  
+    *예시: `docs/presentation-pain-points`, `docs/icebox-user-stories`*
+- **작업 범위 격리**: 단일 feature 브랜치에서는 할당된 단일 Task 또는 단일 User Story에 해당하는 작업만 수행하며, 관련 없는 타 모듈의 변경을 혼합하지 않습니다.
+
+### 3. 개발 완료 후 Merge Request (MR) 생성 및 리뷰 절차
+개발이 완료된 사항에 대해 타깃 브랜치(`develop`)로 MR을 생성할 때 아래 3단계 검증을 완료해야 합니다:
+
+1. **[사전 로컬 검증 (Pre-MR Checklist)]**:
+   - 로컬 단위/통합 테스트 100% 통과 확인 (`pytest test_case/` 전수 통과, 프론트엔드 빌드 이상 없음).
+   - SonarLint 정적 분석 규칙 준수 (단일 파일 250라인 이하, 인지 복잡도 10 이하, 미사용 코드 제거).
+   - 사용자 스토리 인수 조건(AC) 및 완료 정의(DoD) 100% 충족 확인.
+2. **[Merge Request 필수 작성 항목]**:
+   - **MR 제목**: `[Type] 연계 ID: 명확한 작업 요약` (예: `[Feature] US-16: 산책 시간 기반 맞춤형 루프 코스 생성 및 테스트 구축`)
+   - **관련 이슈 / 스토리**: `Closes #US-16` 또는 `Relates to TASK-16-1`
+   - **주요 변경 사항 (What & Why)**: 신규 기능, 변경된 알고리즘, 수정된 API 스키마 요약
+   - **검증 결과 (Test Evidence)**: 단위/통합 테스트 실행 결과 첨부 (예: `71 passed in 0.36s`)
+   - **리뷰어 확인 요청 사항 (Review Notes)**: 특별히 주의 깊게 봐주어야 할 부분이나 파라미터 튜닝 내역
+3. **[코드 리뷰 및 병합 (Review & Merge)]**:
+   - 최소 1인 이상의 동료 개발자(Peer Reviewer) 리뷰 및 승인(Approval) 획득 후 병합.
+   - `develop` 브랜치와의 충돌(Conflict)이 발생할 경우, 작업 브랜치에서 `develop`을 rebase 또는 merge하여 로컬에서 충돌을 안전하게 해결 후 푸시.
+   - MR 병합 완료 후 로컬 및 원격의 `feature` 브랜치는 즉시 삭제하여 브랜치 청결도(Cleanliness)를 유지.
+
+---
+
+## [Gemini 실행 가이드라인] 코드 제안 시 6단계 필수 검증
+
+Gemini는 코드를 제안하거나 수정할 때 다음 6단계를 내부적으로 검증한 후 답변을 출력합니다.
+
+1. **[목적 검증]**: 이 코드가 PawTrail의 사용자 스토리(US-01~US-16) 및 기획 의도와 완벽히 부합하며, 불필요한 오버엔지니어링(YAGNI)을 배제했는가?
 2. **[아키텍처 검증]**: Next.js(TypeScript) / FastAPI(Python Pydantic V2) / LangGraph / Supabase 모듈 간 규격 및 노면 가중치 비용 공식과 일치하는가?
 3. **[품질/안정성/복잡도 검증]**: SonarLint 규칙(단일 파일 250라인 이하, 함수 40라인 이하, 인지 복잡도 10 이하, 중첩 삼항연산 금지, 미사용 코드 제거)을 통과했는가? 초과 시 선제적 리팩토링을 권고했는가?
 4. **[테스트 동기화 검증 (필수)]**: 사용자 스토리나 Task의 변경사항이 테스트케이스(인수조건 검증, 스키마, Fixture, 기대값)에 빠짐없이 반영·갱신되었으며, 전수 테스트를 통과했는가?
 5. **[사용자 경험 검증]**: 로딩, 에러, 빈 상태가 처리되었고, 노면 색상 규격과 외부 지도 딥링크 등 야외 실사용성이 충족되었는가?
+6. **[협업 및 형상관리 검증]**: 작업 내용이 독립된 feature 브랜치 단위로 격리되어 있으며, MR 생성을 위한 커밋 메시지 규격과 사전 테스트 통과 조건을 충족했는가?

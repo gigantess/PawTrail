@@ -192,3 +192,21 @@
 ### 6.3 회귀 방지 전수 테스트 실행 및 보고
 - 테스트케이스를 갱신한 직후, 관련 테스트 스위트(Pytest, Jest 등)를 직접 실행하여 **회귀 결함(Regression) 발생 여부를 확인**하고 테스트 통과 결과를 보고서에 명시합니다.
 - `docs/03_PawTrail_Agile_User_Stories.md`의 DoD 체크박스를 최신 통과 현황에 맞게 동기화합니다.
+
+---
+
+## 7. Git 형상 관리 및 Merge Request(MR) 협업 규칙
+
+팀원 간 병렬 작업 시 코드 충돌을 예방하고 배포 브랜치의 무결성을 보장하기 위해 다음 Git 워크플로우를 준수합니다.
+
+### 7.1 독립 feature 브랜치 생성 원칙
+- `main` 및 `develop` 브랜치에 직접 커밋/푸시(Direct Push)하는 행위를 금지합니다.
+- 모든 작업(기능 구현, 버그 수정, 리팩토링)은 최신 `develop` 브랜치에서 분기한 개별 브랜치에서 진행합니다:
+  - 기능 개발: `feature/{member}-{task-id}` 또는 `feature/{story-id}-{feature-name}` (예: `feature/member-a-us01-agent`, `feature/us16-target-duration`)
+  - 버그 수정: `fix/{issue-id}-{issue-summary}` (예: `fix/gps-drift-dead-reckoning`)
+  - 리팩토링: `refactor/{target-module}`
+
+### 7.2 Merge Request (MR) 생성 및 머지 절차
+- **사전 검증**: 작업 완료 후 로컬에서 `pytest test_case/` 전수 통과 및 SonarLint 복잡도 규칙 준수 여부를 확인합니다.
+- **MR 제출**: 타깃 브랜치를 `develop`으로 지정하여 Merge Request를 생성하고, 연계된 사용자 스토리/Task ID, 변경 내용 요약, 테스트 통과 증빙을 첨부합니다.
+- **코드 리뷰 및 머지**: 최소 1인 이상의 동료 리뷰어 승인을 얻은 후 병합하며, 병합 완료 후 사용된 feature 브랜치는 즉시 삭제합니다.
