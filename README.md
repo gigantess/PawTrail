@@ -52,12 +52,12 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 PawTrail은 **Next.js 모바일 웹(Frontend) + FastAPI(Backend) + LangGraph / Gemini(AI) + Supabase(DB & Memory) + n8n(Automation)**으로 구성된 모던 클라우드 네이티브 아키텍처를 채택하고 있습니다.
 
 ```mermaid
-graph TD
+flowchart TD
     User["📱 견주 (모바일 웹 브라우저)"]
     
     subgraph Frontend ["Frontend (Next.js / Tailwind CSS / Mapbox)"]
         UI["반응형 한 손 조작 UI"]
-        Pocket["Screen Wake Lock & 다크 포켓 모드"]
+        Pocket["Screen Wake Lock 및 다크 포켓 모드"]
         DeepLink["네이버/카카오 지도 도보 딥링크"]
     end
 
@@ -69,12 +69,12 @@ graph TD
 
     subgraph AI_Agent ["AI Agent Layer (LangGraph / ReAct)"]
         Agent["PawTrail Orchestrator Agent"]
-        Tools["@tool: get_dog_context<br/>@tool: generate_loop_route<br/>@tool: analyze_surface_image<br/>@tool: search_parking"]
+        Tools["도구 레지스트리 (@tool)<br/>- get_dog_context<br/>- generate_loop_route<br/>- analyze_surface_image<br/>- search_parking"]
     end
 
-    subgraph Data_Infra ["Database & External Services"]
-        DB[("Supabase (PostgreSQL)")<br/>반려견 프로필 & 산책 이력]
-        Gemini["Google Gemini 2.5 Flash"]
+    subgraph Data_Infra ["Database and External Services"]
+        DB[("Supabase (PostgreSQL)<br/>반려견 프로필 및 산책 이력")]
+        Gemini["Google Gemini 1.5 / 2.5 Flash"]
         OSM["OpenRouteService / OSRM"]
         n8n["n8n 기상청 지면열 자동 알림"]
     end
@@ -82,7 +82,7 @@ graph TD
     User <--> UI
     UI <--> Pocket
     UI <--> DeepLink
-    UI <-->|JSON REST API| API
+    UI -- "JSON REST API" <--> API
     API <--> Agent
     Agent <--> Tools
     Tools <--> RouterTool
@@ -90,22 +90,22 @@ graph TD
     Tools <--> Gemini
     RouterTool <--> OSM
     API <--> DB
-    n8n -.->|Webhook 알림| DB
+    n8n -. "Webhook 알림" .-> DB
 ```
 
 ---
 
 ## 4. 👥 팀 구성 및 역할 분담 (Team Roles)
 
-팀원 5명이 각자의 전문 영역을 맡아 애자일 2주 스프린트(총 4주)로 개발을 진행합니다.
+팀원 5명이 각자의 전문 영역을 맡아 5주 애자일 스프린트(2개 스프린트 및 Hardening)로 개발을 진행합니다.
 
 | 역할 | 담당자 | 주 업무 영역 | 담당 사용자 스토리 |
 |---|:---:|---|---|
-| **Member A** | **PM & AI Product Lead** | • 프로젝트 일정 관리 및 기획 총괄<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 | US-01, US-04, US-05 |
-| **Member B** | **AI Engineer** | • Gemini Flash 비전 프롬프트 엔지니어링<br/>• 노면 결측치 Fallback 및 기상청 지면열 모델링 | US-02, US-03, US-13 |
-| **Member C** | **Backend & Routing Lead** | • FastAPI 백엔드 구축 및 REST API 엔드포인트<br/>• Routing API Provider 연동 및 순환형 라우터 | US-02, US-03, US-13 |
-| **Member D** | **Frontend & UI/UX Lead** | • Next.js 기반 모바일 웹 반응형 UI/UX<br/>• Mapbox 노면 Polyline, Screen Wake Lock & 포켓 모드 | US-07, US-08, US-09 |
-| **Member E** | **Infra, QA & DevOps Lead** | • Supabase DB 모델링 및 Vercel/Render CI/CD<br/>• n8n 날씨 자동화 및 **5인 실사용자 CBT 총괄** | US-06, US-10, US-11, US-12 |
+| **Member A** | **PM & AI Agent Lead** | • 프로젝트 일정 관리 및 PM 총괄<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 | US-01, US-02, US-16 |
+| **Member B** | **AI / Vision Lead** | • Gemini Flash 비전 프롬프트 엔지니어링<br/>• 노면 시각적 위험 판독 및 재탐색 피드백 | US-04, US-05 |
+| **Member C** | **Backend & Routing Lead** | • FastAPI 백엔드 구축 및 REST API 엔드포인트<br/>• Routing API Provider 연동, 노면 가중치 순환 라우터 & 거리 환산 | US-02, US-03, US-13, US-16 |
+| **Member D** | **Frontend & UI/UX Lead** | • Next.js 기반 모바일 웹 반응형 UI/UX<br/>• Mapbox 노면 Polyline, Screen Wake Lock & 포켓 모드, 즐겨찾기 및 PWA 캐시 | US-07, US-08, US-09, US-14, US-15 |
+| **Member E** | **Infra, QA & DevOps Lead** | • Supabase DB 모델링(Memory/즐겨찾기) 및 Vercel/Render CI/CD<br/>• n8n 날씨 자동화 및 **5인 실사용자 CBT 총괄** | US-06, US-10, US-11, US-12, US-14 |
 
 ---
 
@@ -119,8 +119,8 @@ docs/
 ├── 02_PawTrail_Team_building.md              [2단계: 팀 빌딩, 팀원별 역할 및 R&R]
 ├── 03_PawTrail_Agile_User_Stories.md         [3단계: 16개 애자일 사용자 스토리 & 인수 조건]
 ├── 04_PawTrail_Architecture_Design.md        [4단계: C4 아키텍처 및 시스템 세부 설계]
-├── 05_PawTrail_Detailed_Implementation_Plan.md [5단계: 4주간 개발 마일스톤 및 일정 계획]
-├── 06_PawTrail_Task_Breakdown_and_Estimations.md [6단계: 38개 구현 세부 태스크 (총 218h)]
+├── 05_PawTrail_Detailed_Implementation_Plan.md [5단계: 5주간 개발 마일스톤 및 5인 협업 계획]
+├── 06_PawTrail_Task_Breakdown_and_Estimations.md [6단계: 54개 구현 세부 Task (총 330h / 약 324h)]
 └── screens/                                  [7단계: 5대 핵심 시나리오 UI 스크린 & 인터랙티브 뷰어]
 ```
 
