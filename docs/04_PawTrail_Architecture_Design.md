@@ -107,7 +107,7 @@ flowchart TB
 * **프레임워크**: React Native (Expo SDK 51+), TypeScript, React Native Maps, expo-location, expo-speech, expo-camera
 * **주요 구성요소**:
   1. **Planner Screen**:
-     - 반려견 선택 드롭다운, 관절 안심 케어 수준 및 웰니스 기본 설정 표시, 목표 산책 시간 슬라이더(15~120분), 선호 노면 선택 칩(폭신한 흙길/부드러운 잔디/탄성포장/보도블록). (※ 슬개골 탈구 등 질병 용어 전면 배제)
+     - 반려견 선택 드롭다운, 관절 안심 케어 수준 및 웰니스 기본 설정 표시, 목표 산책 시간 슬라이더(10~90분), 선호 노면 선택 칩(폭신한 흙길/부드러운 잔디/탄성포장/보도블록). (※ 슬개골 탈구 등 질병 용어 전면 배제)
   2. **Map Route Viewer (React Native Maps)**:
      - GeoJSON 기반 구간별 노면 속성 분기 렌더링:
        - 🌿 잔디: `#10B981` (Green-500)

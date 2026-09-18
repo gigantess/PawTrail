@@ -96,7 +96,7 @@
 
 ### [Epic 3] 개인화 Long-term Memory
 
-#### US-06: 반려견 건강 프로필 및 과거 산책 이력 기억 (3 pt / 총 18h)
+#### US-06: 반려견 건강 프로필 및 과거 산책 이력 기억 (3 pt / 총 22h)
 * **담당**: Member E (Sub: Member A) | **스프린트**: Sprint 1 (Week 2)
 * **상세 작업 분할 (Task Breakdown)**:
   * **TASK-06-1**: Supabase 테이블 DDL 설계 (`users`, `dogs`, `walk_history`, `feedback`) (4h / Member E)
@@ -105,6 +105,8 @@
     - 유저 세션별 반려견 프로필 및 최근 5회 산책 요약 데이터 캐싱 및 조회 함수 작성.
   * **TASK-06-3**: LangGraph Agent 노드 내 이전 산책 맥락(피로도, 선호도) 동적 인젝션 (8h / Member A)
     - "지난 산책에서 언덕을 힘들어함" 피드백을 시스템 프롬프트의 동적 제약조건으로 주입.
+  * **TASK-06-4**: 부정 평가 노면 피드포워드(Feedback Feedforward) 가중치 강화 로직 구현 및 단위 테스트 (4h / Member A)
+    - 직전 산책에서 낮은 만족도(1~2점)를 부여한 노면의 회피 페널티 가중치를 자동 강화하는 피드포워드 메커니즘 구현 (US-06 AC3 대응).
 
 #### US-14: 마음에 드는 안심 산책로 '나만의 코스(즐겨찾기)' 보관 (2 pt / 총 12h)
 * **담당**: Member D, E | **스프린트**: Sprint 2 (Week 3~4)
@@ -218,7 +220,7 @@
 | **US-03** | Waypoint 최적화, Routing API(ORS/OSRM) 연동 및 토지피복도 노면 보정 | Member C, A | 8 pt | 4개 | 38 h |
 | **US-04** | 공원 종합안내판 비전 판독 및 산책 제약조건 도출 | Member B | 5 pt | 4개 | 26 h |
 | **US-05** | 완주 후기 사진 비전 검증 기반 지도 속성 영구 보강 | Member B, C | 3 pt | 3개 | 16 h |
-| **US-06** | 반려견 프로필 및 산책 이력 기억 (Memory) | Member E, A | 3 pt | 3개 | 18 h |
+| **US-06** | 반려견 프로필 및 산책 이력 기억 (Memory) | Member E, A | 3 pt | 4개 | 22 h |
 | **US-07** | 지도 시각화 및 OSRM 회전 안내 연동 | Member D | 5 pt | 4개 | 26 h |
 | **US-08** | 핸즈프리 음성 길 안내 및 선호 노면 달성률 | Member D, C | 5 pt | 4개 | 26 h |
 | **US-09** | 커뮤니티 피드 공유 및 피드백 제출 | Member D, E | 3 pt | 3개 | 16 h |
@@ -229,15 +231,15 @@
 | **US-14** | 나만의 안심 코스 즐겨찾기(북마크) 보관 | Member D, E | 2 pt | 2개 | 12 h |
 | **US-15** | 오프라인 지도 캐시 및 산책 유지 (Expo) | Member D | 2 pt | 2개 | 10 h |
 | **US-16** | 산책 시간(Target Duration) 기반 맞춤형 코스 생성 | Member A, C | 3 pt | 3개 | 16 h |
-| **합계** | **16개 사용자 스토리 전수 분할** | **5인 팀 전원** | **62 pt** | **54개 Task** | **330 h (약 324h)** |
+| **합계** | **16개 사용자 스토리 전수 분할** | **5인 팀 전원** | **62 pt** | **55개 Task** | **334 h** |
 
 ---
 
 ## 4. 팀원별 담당 공수 배분 현황 (5인 밸런스 검증)
 
-* **Member A (AI Agent Lead)**: 62 h (US-01, US-02 일부, US-06 일부, US-11, US-16)
+* **Member A (AI Agent Lead)**: 66 h (US-01, US-02 일부, US-06 일부, US-11, US-16)
 * **Member B (Vision AI Lead)**: 48 h (US-04, US-05, US-11)
 * **Member C (Backend/GIS Lead)**: 90 h (US-02, US-03, US-05 일부, US-10 일부, US-13, US-16)
 * **Member D (Frontend Lead)**: 79 h (US-07, US-08, US-09, US-11, US-14, US-15)
 * **Member E (Infra/QA Lead)**: 51 h (US-06, US-10, US-11 총괄, US-12, US-14)
-* **총 개발 공수**: **330 Hours (약 324h)** (개발자 1인당 5주간 주당 평균 약 13.2시간 순수 구현 투입으로 일정 리스크 없이 완수 가능)
+* **총 개발 공수**: **334 Hours** (개발자 1인당 5주간 주당 평균 약 13.4시간 순수 구현 투입으로 일정 리스크 없이 완수 가능)
