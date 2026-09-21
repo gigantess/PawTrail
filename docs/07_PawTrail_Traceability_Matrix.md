@@ -23,7 +23,8 @@ graph LR
 5. **[04_PawTrail_Architecture_Design.md](file:///d:/cody/PawTrail/docs/04_PawTrail_Architecture_Design.md)**: 시스템 블록도, 핵심 알고리즘, API 엔드포인트 명세, DB 스키마
 6. **[05_PawTrail_Detailed_Implementation_Plan.md](file:///d:/cody/PawTrail/docs/05_PawTrail_Detailed_Implementation_Plan.md)**: 5주차 스프린트 일정, 마일스톤 및 리스크 완화 계획
 7. **[06_PawTrail_Task_Breakdown_and_Estimations.md](file:///d:/cody/PawTrail/docs/06_PawTrail_Task_Breakdown_and_Estimations.md)**: 68개 세부 Task, 77 Story Points, 총 372 Hours 공수 추정
-8. **[07_PawTrail_Presentation_Pain_Points.md](file:///d:/cody/PawTrail/docs/07_PawTrail_Presentation_Pain_Points.md)**: 발표 10장 슬라이드 구조 및 심사위원 Q&A 방어 논리 스크립트
+8. **[PawTrail_Presentation_strategy.md](file:///d:/cody/PawTrail/docs/presentation/PawTrail_Presentation_strategy.md)**: 10장 발표 슬라이드 덱 구조 및 심사위원 Q&A 방어 논리 스크립트
+9. **[07_PawTrail_Traceability_Matrix.md](file:///d:/cody/PawTrail/docs/07_PawTrail_Traceability_Matrix.md)**: 전 생명주기 산출물 간 양방향 추적 매트릭스 (RTM)
 
 ---
 
@@ -110,20 +111,23 @@ graph LR
 
 ## 6. 향후 과제 (Phase 2 / Icebox) 추적 매트릭스
 
-본 백로그는 핵심 18개 스토리(Sprint 1~2, 77 pt, 372 h)의 납기 안정성을 완벽히 보호하기 위해 Phase 2(Icebox)로 격리 관리하며, 5인 CBT(US-H1) 피드백 수집 후 최우선 반영한다.
+본 백로그는 핵심 18개 스토리(Sprint 1~2, 77 pt, 372 h)의 개발 범위와 납기 안정성을 완벽히 보호하기 위해 Phase 2(Icebox)로 격리 관리하며, 5인 CBT(US-H1) 피드백 수집 후 최우선 반영한다.
 
 | Story ID | 도메인 분류 | 사용자 스토리 요약 | 차별화 및 구현 전략 | Story Points | 우선순위 |
 |:---:|---|---|---|:---:|:---:|
-| **US-21** | 온보딩 UX | **사용자 온보딩 및 반려견 프로필 로컬 등록 플로우** | 로컬 우선 위저드 UX, AsyncStorage 즉시 적재 | 2 pt | Must |
-| **US-22** | 산책 안전 | **산책 중 긴급 산책 중단 및 귀환 경로 안내 (Return to Start)** | 출발점 복귀 최단/최안전 경로 즉시 재산출 | 3 pt | Should |
-| **US-23** | 개인정보 보호 | **위치 정보 수집 동의 및 로컬 저장/마스킹 동의 플로우** | 위치정보법 준수 및 200m 공간 블러링 시각 안내 | 2 pt | Must |
-| **US-24** | 개인화 맥락 | **다견 가구(Multi-Dog) 동시 산책 코스 최적화** | 복수 반려견 최솟값 속도 환산 및 노면 절충 | 5 pt | Should |
+| **US-17** | 게이미피케이션 | **관절 안심 완만길·그늘길 영토 점령 (Calm & Green Hexagon)** | H3 헥사곤 기반 안심 완만 보행 타일 점령 (2.5배 가중치) | 5 pt | Should |
+| **US-18** | 편의 & 위생 | **산책 중 한 손 원터치 배변 마킹 및 공원 편의시설(음수대/세족장) 핀** | 한 손 조작 배변 GPS 로깅 & 세족장 커뮤니티 POI 제보 | 3 pt | Must |
+| **US-19** | ESG & 동기부여 | **관절 안심 걸음 누적 유기견 영양제 기부 챌린지** | 완만길 70% 이상 달성 시 기부 포인트 2배 적립 | 3 pt | Could |
+| **US-20** | 코어 라우팅 (역발상) | **예민견·사회화 취약견을 위한 한적한 안심 코스 (Reactive Dog)** | 인기 코스 역발상 우회로 및 시야 확보 보행로 추천 | 5 pt | Should |
+| **US-21** | 온보딩 UX | **인터랙티브 온보딩 위저드 및 첫 산책 가이드 투어** | 3단계 인터랙티브 카드 튜토리얼 & 첫 산책 원터치 시작 | 2 pt | Must |
+| **US-22** | 산책 안전 | **산책 중 긴급 산책 중단 및 귀환 경로 안내 (Return to Start)** | 돌발 피로/기상 악화 시 출발점 복귀 최단/최안전 경로 재산출 | 3 pt | Should |
+| **US-23** | 개인정보 보호 | **위치 정보 수집 동의 및 로컬 저장/마스킹 투명 고지 플로우** | 위치정보법 준수 및 200m 공간 블러링 시각 안내 | 2 pt | Must |
+| **US-24** | 개인화 맥락 | **다견 가구(Multi-Dog) 동시 산책 코스 최적화** | 복수 반려견 최솟값 속도 환산 및 계단 무조건 회피 | 5 pt | Should |
 | **US-25** | 산책 안전 | **야간/저시야 산책 시 가로등 조도 기반 안전 경로 추천** | OSM `lit=yes` 및 가로등 공공데이터 연계 | 5 pt | Could |
-| **US-26** | 노면 안전 AI | **계절별/날씨 연동 실시간 노면 상태 경고 (진흙탕 주의)** | 누적 강수량 기반 흙길 가중치 동적 전환 | 3 pt | Should |
-| **US-27** | 비즈니스 연계 | **반려견 동반 가능 시설(카페/병원/펫숍) POI 연계 산책** | 펫 프렌들리 상권 제휴 및 쉼터 경유지 탐색 | 3 pt | Could |
-| **US-28** | 안심 거점 연계 | **주차장 P&R(Park & Walk) 연계 순환 코스 추천** | 공영주차장 출입구 직결 보행로 순환 라우팅 | 3 pt | Should |
-| **US-29** | 오프라인 연속성 | **통신 음영지역 산책 유지 및 오프라인 지도 벡터 캐시** | 숲길 통신 단절 시 지도/음성안내 무중단 유지 | 2 pt | Should |
-| **US-30** | 개인 보관함 | **나만의 안심 코스 즐겨찾기(Bookmark) 로컬 보관함** | 검증된 안심 코스 원터치 북마크 및 재산책 연동 | 2 pt | Must |
+| **US-26** | 노면 안전 AI | **계절별/날씨 연동 실시간 노면 상태 경고 (비/눈 후 진흙탕 주의)** | 누적 강수량 기반 흙길 가중치 동적 전환 및 포장 대안 제안 | 3 pt | Should |
+| **US-27** | 비즈니스 연계 | **반려견 동반 가능 시설(카페/병원/펫숍) POI 연계 산책 코스** | 펫 프렌들리 상권 제휴 및 쉼터 경유지 탐색 | 3 pt | Could |
+| **US-28** | 오프라인 연속성 | **통신 음영지역 산책 유지 및 오프라인 지도 벡터 캐시** | 숲길 통신 단절 시 지도/음성안내 무중단 유지 (Pre-caching) | 2 pt | Should |
+| **US-29** | 개인 보관함 | **나만의 안심 코스 즐겨찾기(Bookmark) 로컬 보관함 및 원터치 재산책** | 검증된 안심 코스 AsyncStorage 로컬 캐싱 및 즉시 재산책 | 2 pt | Must |
 
 ---
 
@@ -131,7 +135,7 @@ graph LR
 
 | 검증 항목 | 검증 대상 문서 | 일치 여부 | 세부 검증 내용 및 근거 |
 |---|---|:---:|---|
-| **스토리 체계** | 01, 03, 04, 05, 06, 08 | **100% 일치** | `US-A1 ~ US-H1` (18개 핵심 스토리) 및 Phase 2(`US-21 ~ US-30`) 전수 동기화 |
+| **스토리 체계** | 01, 03, 04, 05, 06, 07 | **100% 일치** | `US-A1 ~ US-H1` (18개 핵심 스토리) 및 Phase 2(`US-17 ~ US-29`) 전수 동기화 |
 | **스토리 포인트** | 03, 05, 06, 08 | **100% 일치** | 총 **77 pt** (Sprint 1: 33 pt, Sprint 2: 36 pt, Hardening: 8 pt) 전 문서 일치 |
 | **총 개발 공수** | 05, 06, 08 | **100% 일치** | 총 **372 Hours** (5인 팀 5주 일정) 분할 및 합산 전수 일치 |
 | **클라이언트 스택** | 01, 04, 05, 07, 08 | **100% 일치** | React Native Expo (SDK 51+), Foreground Service TTS, EAS Build & EAS Update |
