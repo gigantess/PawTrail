@@ -13,7 +13,7 @@
   2. **화면 주시형 보행 위험 탈피** ➔ **React Native (Expo) 기반 시선 해방(Eyes-Free) 핸즈프리 음성 안내 & EAS 무중단 OTA 배포**
   3. **소셜 로그인 및 복잡한 서버 개인정보 축적 배제** ➔ **간단한 이메일 회원가입 & 개인정보 로컬 저장(Privacy-First Local Storage)**
   4. **과도한 스트리밍(SSE/WS) 인프라 지양** ➔ **안정적인 REST API + 5주 점진적 개발 및 5인 실사용자 필드 검증**
-* **목표 달성성**: 도출된 **18개 사용자 스토리 (총 75 pt / 366h)**를 5인 전문 R&R과 애자일 스프린트로 5주 내 충분히 완주 가능.
+* **목표 달성성**: 도출된 **18개 사용자 스토리 (총 77 pt / 372h)**를 5인 전문 R&R과 애자일 스프린트로 5주 내 충분히 완주 가능.
 
 ---
 
@@ -47,10 +47,10 @@
 | 담당자 | 포지션 & 주요 역할 | 담당 범위 및 핵심 책임 | 관련 에픽 및 스토리 |
 |:---:|---|---|---|
 | **Member A** | **AI Agent / Product Logic Lead** | • LangGraph 기반 Walk Planning Agent 설계<br>• Pydantic V2 Strict Input Schema 및 상태 머신 수립<br>• 클라이언트 로컬 맥락(반려견 조건, 피드백) 기반 무상태(Stateless) 프롬프트 오케스트레이션<br>• 후보 경로 평가 코멘트 생성 및 가드레일 | Epic A (US-A1, US-A3)<br>Epic B (US-B4)<br>Epic D (US-D2)<br>Epic E (US-E3) |
-| **Member B** | **Vision / Multimodal AI Lead** | • Gemini 1.5 Flash 기반 현장 시각적 위험물(턱, 계단, 장애물) 판독<br>• Structured JSON 출력 스키마 고정 및 판독 지연시간 최적화<br>• 저조도, 모션 블러 등 현장 사진 예외 처리 및 가이드<br>• 공원 종합안내판 출입 제한 구역 파싱 | Epic D (US-D1) |
-| **Member C** | **Backend / Routing / GIS Data Lead** | • FastAPI 백엔드 구축 및 Stateless REST API 엔드포인트 구현<br>• OpenRouteService / OSRM 라우팅 API Adapter 연동<br>• OSM Steps 데이터 필터링 및 DEM 경사도 분석 파이프라인<br>• SunCalc 태양각 및 건물 그림자 추정(Level 1~2) 모듈<br>• Candidate Route Scorer 랭킹 알고리즘 개발 | Epic B (US-B1, US-B2, US-B3, US-B4)<br>Epic D (US-D2)<br>Epic G (US-G1) |
-| **Member D** | **Frontend / Mobile App Lead** | • **React Native (Expo SDK 51+) 모바일 앱 구축**<br>• **Android Foreground Service + expo-speech 기반 시선 해방 핸즈프리 음성 안내 엔진 개발**<br>• react-native-maps 기반 구간별 색상 구분 Polyline 렌더링<br>• **AsyncStorage 로컬 스토리지 모듈(반려견 프로필, 개인 궤적, JSON 백업/복원)**<br>• 간편 이메일 회원가입/로그인 폼 및 앱 UI 웰니스 용어 준수 | Epic A (US-A2)<br>Epic C (US-C1, US-C2)<br>Epic E (US-E1, US-E2)<br>Epic G (US-G2) |
-| **Member E** | **Infra / Automation & QA Lead** | • **EAS Build 기반 1회 Android APK 패키징 & EAS Update 무선 OTA 배포 파이프라인 구축**<br>• **Supabase Auth 간편 이메일 가입/로그인 연동 (Auto-confirm 활성화)**<br>• 커뮤니티 공개 코스(`community_courses`), 위험 제보(`hazard_reports`) 스키마 관리<br>• **최소 5인 실사용자 필드 테스트 운영 및 피드백 수집 리드** | Epic A (US-A2)<br>Epic E (US-E2)<br>Epic F (US-F1)<br>Epic H (US-H1) |
+| **Member B** | **Vision / Multimodal AI Lead** | • Gemini 1.5 Flash 기반 현장 시각적 위험물(턱, 계단, 장애물) 판독<br>• Structured JSON 출력 스키마 고정 및 판독 지연시간 최적화<br>• 저조도, 모션 블러 등 현장 사진 예외 처리 및 가이드<br>• 공원 종합안내판 출입 제한 구역 파싱 | Epic D (US-D1, US-D2) |
+| **Member C** | **Backend / Routing / GIS Data Lead** | • FastAPI 백엔드 구축 및 Stateless REST API 엔드포인트 구현<br>• OpenRouteService / OSRM 라우팅 API Adapter 연동<br>• OSM Steps 데이터 필터링 및 DEM 경사도 분석 파이프라인<br>• SunCalc 태양각 및 건물 그림자 추정(Level 1~2) 모듈<br>• Candidate Route Scorer 랭킹 알고리즘 개발 | Epic A (US-A3)<br>Epic B (US-B1, US-B2, US-B3, US-B4)<br>Epic D (US-D2)<br>Epic G (US-G1) |
+| **Member D** | **Frontend / Mobile App Lead** | • **React Native (Expo SDK 51+) 모바일 앱 구축**<br>• **Android Foreground Service + expo-speech 기반 시선 해방 핸즈프리 음성 안내 엔진 개발**<br>• react-native-maps 기반 구간별 색상 구분 Polyline 렌더링<br>• **AsyncStorage 로컬 스토리지 모듈(반려견 프로필, 개인 궤적, JSON 백업/복원)**<br>• 간편 이메일 회원가입/로그인 폼 및 앱 UI 웰니스 용어 준수 | Epic A (US-A2, US-A3)<br>Epic C (US-C1, US-C2)<br>Epic D (US-D2)<br>Epic E (US-E1, US-E2, US-E3)<br>Epic F (US-F1)<br>Epic G (US-G1, US-G2)<br>Epic H (US-H1) |
+| **Member E** | **Infra / Automation & QA Lead** | • **EAS Build 기반 1회 Android APK 패키징 & EAS Update 무선 OTA 배포 파이프라인 구축**<br>• **Supabase Auth 간편 이메일 가입/로그인 연동 (Auto-confirm 활성화)**<br>• 커뮤니티 공개 코스(`community_courses`), 위험 제보(`hazard_reports`) 스키마 관리 및 200m 마스킹<br>• **기상청 단기예보 n8n 연동 및 최소 5인 실사용자 필드 테스트(CBT) 운영 리드** | Epic F (US-F1)<br>Epic G (US-G2)<br>Epic H (US-H1) |
 
 ---
 
