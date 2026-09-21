@@ -20,10 +20,9 @@ langchain>=0.2.0
 langchain-core>=0.2.0
 
 # --- [GIS, Spatial Processing & Routing] ---
-# 환경부 세분류 토지피복지도(SHP/GeoJSON) 공간 결합, 계단 회피, 경사도 및 그늘 분석
-geopandas>=0.14.0
+# OSM 보행망 계단 회피(highway=steps), DEM 경사도 및 SunCalc 그늘길 분석, OSRM/ORS 라우팅
 shapely>=2.0.0
-pyproj>=3.6.0                            # 좌표계 변환 (EPSG:5179 <-> EPSG:4326)
+pyproj>=3.6.0                            # 좌표계 변환 (WGS84 EPSG:4326 등)
 suncalc>=0.1.2                           # 태양 위치 및 실시간 그늘길 계산
 networkx>=3.2                            # 보행 네트워크 그래프 분석 및 루프 탐색
 openrouteservice>=2.3.0                  # OpenRouteService Routing API 어댑터
