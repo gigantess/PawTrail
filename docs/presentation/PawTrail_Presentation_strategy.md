@@ -170,12 +170,17 @@ sequenceDiagram
 
 ## 7. 📊 발표 슬라이드 스토리보드 제안 (Slide Narrative)
 
-* **Slide 1. 타이틀**: PawTrail - 반려견의 관절과 견주의 시선을 지키는 핸즈프리 AI 산책 플랫폼
-* **Slide 2. 문제 제기**: 도심지 산책의 4대 고통 (계단, 급경사, 직사광선, 보행 중 화면 주시 위험)
-* **Slide 3. 시장의 맹점**: 최단거리만 알려주는 기존 상용 지도와 화면 의존형 보행의 위험성
-* **Slide 4. 솔루션 소개**: 무계단·완만 경사·그늘 우선 순환 산책로 + 주머니 속 시선 해방 핸즈프리 음성 안내
-* **Slide 5. 기술 아키텍처**: React Native Expo(AsyncStorage) $\to$ FastAPI(Stateless) $\to$ LangGraph $\to$ Tool Layer
-* **Slide 6. 5대 엔지니어링 돌파구**: A* 배제, 신뢰도 체계, 비전/열위험 분리, **주머니 속 백그라운드 음성 길 안내 & EAS OTA**, Privacy-First 로컬 보관
-* **Slide 7. 핵심 기능 시연**: 대화형 코스 생성, 화면 꺼짐 상태 실시간 음성 브리핑, 현장 턱 사진 분석 및 우회
-* **Slide 8. 실사용자 검증**: 5인 실견주 필드 테스트 결과 (핸즈프리 보행 편의성 및 프라이버시 만족도)
-* **Slide 9. 비전 및 로드맵**: 시선과 관절이 모두 편안한 보행 약견 생태계 구축
+10~15분 발표 시 가장 강력한 몰입감과 기술적 설득력을 주는 10장 구성안입니다:
+
+| 슬라이드 번호 | 슬라이드 타이틀 | 핵심 비주얼 및 전달 메시지 |
+|:---:|---|---|
+| **Slide 1** | **Intro (Hook)** | 슬개골 탈구 붕대를 감은 강아지 + 뜨거운 아스팔트 열화상 사진 ➔ **"우리가 매일 걷는 길이 아이에겐 고통일 수 있습니다"** |
+| **Slide 2** | **Problem (Pain Points)** | 기존 상용 지도(네이버/카카오)의 한계: "최단거리만 알려줄 뿐 계단·경사·그늘 정보 부재" + "당기는 리드줄을 잡고 한 손으로 화면만 보며 걷는 보행 안전 위협" |
+| **Slide 3** | **Solution (Core Value)** | PawTrail 핵심 가치: **"계단 회피·완만 경사·그늘 우선 순환 라우팅 & 시선 해방(Eyes-Free) 핸즈프리 음성 안내 안심 플랫폼"** 시연 영상 |
+| **Slide 4** | **Key Features** | 1) 자연어 산책 플래너 2) 다요소 순환 라우팅 3) 공원 종합안내판 & 현장 위험물 비전 진단 4) 주머니 속 백그라운드 핸즈프리 음성 길 안내 |
+| **Slide 5** | **Architecture** | React Native Expo (Local-First AsyncStorage), FastAPI Backend, LangGraph Agent, Supabase Cloud (200m 마스킹), EAS Update 무선 OTA, n8n 일일 지면열 알림 |
+| **Slide 6** | **Tech Pivot 1 (Routing)** | **[과도한 A* 직접 구현 vs Routing Adapter & 신뢰도 체계]** OSM Steps 필터링, DEM 완만 경사 연산, 태양/건물 차폐 그늘길 평가 ➔ 현실적 가용 데이터 기반 고속 라우팅 완성 |
+| **Slide 7** | **Tech Pivot 2 (Vision)** | **[사진만으로 지면온도 측정 과장 탈피 vs 현장 위험 진단]** 공원 종합안내판 사전 판독(`ParkBoardInspector`) + 보행 중 높은 턱/공사 구간 시각 분석 및 안전 우회 |
+| **Slide 8** | **Native UX & Privacy** | **[주머니 속 음성 길 안내 & Local-First]** 화면 꺼진 폰 주머니 보관 중 실시간 TTS 브리핑 + 서버 개인정보 제로(`AsyncStorage`) 및 출발지 200m 공간 마스킹 |
+| **Slide 9** | **Field CBT (5인 검증)** | 실제 5마리 반려견 필드 산책 사진 및 견주 피드백 ➔ 핸즈프리 안전성 및 알고리즘 가중치 튜닝 결과, EAS Update 무선 무점검 핫픽스 실체감 |
+| **Slide 10** | **Conclusion & Roadmap** | 18개 핵심 스토리 / 77 pt / 372 h 완수 및 DoD 100% 달성 ➔ **"반려견에게 산책은 하루의 전부입니다. 시선과 관절이 모두 편안한 가장 안전한 발걸음을 선물합니다."** |
