@@ -211,3 +211,41 @@
 | **Member D** | Frontend / Mobile App Lead | 86h | 약 17.2h / 주 |
 | **Member E** | Infra / Automation & QA Lead | 52h | 약 10.4h / 주 |
 | **합계** | **5인 전원** | **372h** | **약 74.4h / 주 (팀 전체)** |
+
+---
+
+## 4. 전체 사용자 스토리 및 공수 총괄 요약표
+
+| Story ID | 사용자 스토리 요약 | 담당자 | Story Points | Task 개수 | 총 추정 공수 (Hours) |
+|:---:|---|:---:|:---:|:---:|:---:|
+| **US-A1** | 대화형 자연어 산책 요청 및 조건 구조화 | Member A | 5 pt | 4개 | 24 h |
+| **US-A2** | 반려견 프로필 로컬 등록 및 JSON 백업/복원 | Member D | 3 pt | 4개 | 14 h |
+| **US-A3** | 목표 산책 시간/거리 기반 환산 (속도/슬라이더) | Member A, C | 3 pt | 3개 | 16 h |
+| **US-B1** | 지도 데이터 기반 계단 구간 우선 회피 | Member C | 8 pt | 4개 | 34 h |
+| **US-B2** | DEM 기반 완만 경사 우선 순환 경로 도출 | Member C | 5 pt | 4개 | 26 h |
+| **US-B3** | 태양 위치 및 건물 형상 기반 시간대별 그늘 우선 평가 | Member C | 5 pt | 4개 | 28 h |
+| **US-B4** | Routing API Adapter 연동 및 후보 경로 다요소 스코어링 | Member C, A | 8 pt | 4개 | 36 h |
+| **US-C1** | React Native Maps 기반 구간별 색상 분기 경로 시각화 | Member D | 5 pt | 4개 | 24 h |
+| **US-C2** | 시선 해방(Eyes-Free) 백그라운드 핸즈프리 음성 길 안내 | Member D | 5 pt | 4개 | 26 h |
+| **US-D1** | Vision AI 기반 현장 턱·계단·보행 장애물 시각 분석 | Member B | 5 pt | 4개 | 26 h |
+| **US-D2** | 현장 위험 구간 우회 및 동적 재탐색 | Member B, C | 5 pt | 4개 | 22 h |
+| **US-E1** | 백그라운드 GPS 위치 추적 및 실산책 경로 로컬 저장 | Member D | 5 pt | 4개 | 24 h |
+| **US-E2** | 산책 종료 후 보행 체감 피드백 수집 및 로컬 통계 | Member D | 3 pt | 3개 | 12 h |
+| **US-E3** | 로컬 누적 피드백 기반 무상태(Stateless) AI 추천 보정 | Member A | 3 pt | 3개 | 14 h |
+| **US-F1** | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | Member E | 3 pt | 4개 | 14 h |
+| **US-G1** | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | Member C, D | 2 pt | 3개 | 10 h |
+| **US-G2** | 간편 이메일 가입 및 코스 공유 (출발지 200m 마스킹) | Member E, D | 4 pt | 4개 | 20 h |
+| **US-H1** | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 전원 (Lead: E) | 5 pt | 4개 | 32 h |
+| **합계** | **18개 핵심 스토리** | **5인 전원** | **77 pt** | **68개 Task** | **372 h** |
+
+---
+
+## 5. 팀원별 총 개발 공수 요약 (Team Capacity Allocation)
+
+* **Member A (AI Agent & Product Logic Lead)**: 78 h (US-A1, US-A3 일부, US-B4 일부, US-E3, US-H1)
+* **Member B (Vision AI Lead)**: 56 h (US-D1, US-D2 일부, US-H1)
+* **Member C (Backend / Routing / GIS Lead)**: 126 h (US-A3, US-B1, US-B2, US-B3, US-B4, US-D2 일부, US-G1 일부, US-H1)
+* **Member D (Frontend / Mobile UX Lead)**: 96 h (US-A2, US-C1, US-C2, US-E1, US-E2, US-G1 일부, US-G2 일부, US-H1)
+* **Member E (Infra / DevOps & QA Lead)**: 66 h (US-F1, US-G2, US-H1 총괄, CI/CD 자동화)
+* **총 개발 공수 합계**: **372 Hours** (18개 스토리 완수, 5인 5주 일정 정합)
+

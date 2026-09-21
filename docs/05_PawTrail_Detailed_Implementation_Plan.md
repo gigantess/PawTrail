@@ -11,22 +11,23 @@
   - **백엔드**: FastAPI (Python 3.11+) Stateless REST API
   - **데이터베이스 & 인증**: Supabase Cloud (간편 이메일/비밀번호 Auth, 200m 마스킹 커뮤니티 코스)
 * **팀원별 역할 분담 (R&R)**:
-  * **Member A (AI Agent / Product Logic Lead)**:
-    - LangGraph 기반 Walk Planning Agent 설계 및 무상태(Stateless) 프롬프트 오케스트레이션 (US-A1, US-A3, US-E3)
-    - 클라이언트 로컬 프로필/피드백 페이로드 바인딩 및 음성 안내용 요약 브리핑 생성
+  * **Member A (팀장 / AI Agent & Product Logic Lead)**:
+    - LangGraph 기반 Walk Planning Agent 설계 및 무상태(Stateless) 프롬프트 오케스트레이션 (US-A1, US-A3, US-E3).
+    - Pydantic V2 Strict Tool-calling 규격 수립, 클라이언트 로컬 프로필/피드백 페이로드 바인딩 및 음성 안내용 요약 브리핑 생성.
   * **Member B (Vision / Multimodal AI Lead)**:
-    - Gemini 1.5 Flash 기반 현장 위험물(높은 턱, 계단, 공사) 판독 파이프라인(`VisionHazardInspector`) 개발 (US-D1)
+    - Gemini 1.5 Flash 기반 현장 위험물(높은 턱, 계단, 공사) 판독(`VisionHazardInspector`) 및 공원 종합안내판 비전 판독(`ParkBoardInspector`) 개발 (US-D1, US-D2).
+    - 비전 분석 신뢰도(Confidence >= 0.85) 임계치 판정 및 지도 속성 보강 파이프라인.
   * **Member C (Backend / Routing / GIS Data Lead)**:
-    - FastAPI 백엔드 구축 및 무상태 REST API 구현
-    - Routing API(ORS/OSRM) 어댑터, OSM Steps 필터링, DEM 경사도, SunCalc 그림자 연산 모듈 개발 (US-B1, US-B2, US-B3, US-B4, US-G1)
-  * **Member D (Frontend / Mobile App Lead)**:
-    - React Native Expo 모바일 앱 구축, react-native-maps 지도 시각화 (US-C1)
-    - **Android Foreground Service + expo-speech 기반 시선 해방 핸즈프리 음성 길 안내 엔진 개발** (US-C2)
-    - **AsyncStorage 로컬 스토리지 모듈(반려견 프로필, 개인 궤적, JSON 백업/복원)** (US-A2, US-E1, US-E2)
-  * **Member E (Infra / Automation & QA Lead)**:
-    - **EAS Build(1회 APK) 및 EAS Update(무선 OTA) 배포 자동화 파이프라인 구축** (US-H1)
-    - Supabase Auth 간편 이메일 가입(Auto-confirm) 및 커뮤니티 스키마 관리 (US-G2, US-F1)
-    - **최소 5인 실사용자 필드 테스트 운영 및 품질 보증(QA) 총괄 (US-H1)**
+    - FastAPI 백엔드 구축, OSM 계단 배제(`highway=steps`), DEM 경사도 연산 및 그늘 지표 산출 파이프라인 (US-B1, US-B2, US-B3, US-B4).
+    - 전문 Routing API(OpenRouteService/OSRM) 연동 및 후보 경로 다요소 스코어링 엔진 개발.
+  * **Member D (Frontend / Mobile UX Lead)**:
+    - React Native Expo (SDK 51+) 클라이언트 개발 및 React Native Maps 색상 분기 렌더링 (US-C1, US-C2).
+    - **Android Foreground Service 기반 백그라운드 GPS 위치 추적 및 expo-speech TTS 음성 안내 엔진** (US-E1, US-E2).
+    - **Local-First AsyncStorage 로컬 스토리지 매니저** 및 나만의 코스 즐겨찾기 보관함 (US-A2, US-E3).
+  * **Member E (Infra / DevOps & QA Lead)**:
+    - **EAS Build(1회 APK) 및 EAS Update(무선 무점검 OTA) CI/CD 파이프라인** (US-H2).
+    - Supabase Cloud 간편 이메일/비밀번호 회원가입 및 커뮤니티 공개 코스/제보 테이블 구축 (US-G1, US-G2).
+    - n8n 기반 기상청 지면열 연동 알림 자동화 파이프라인(US-F1) 및 5인 CBT 검증 총괄(US-H1).
 
 ---
 
@@ -43,20 +44,28 @@
    │
 [Week 5] 무선 OTA 핫픽스, 피드백 반영 & 최종 안정화 (EAS Update 실시간 배포, 로컬 백업 검증, 최종 출시)
 ```
+```text
+[Sprint 1 (Week 1~2)] 코어 AI 파이프라인 & 라우팅 엔진 구축 (33 pt)
+       │
+[Sprint 2 (Week 3~4)] 모바일 통합, 음성안내, 커뮤니티, EAS 배포 및 5인 CBT (36 pt)
+       │
+[Hardening & Launch (Week 5)] 피드백 반영 고도화, 문서화 및 최종 데모 (8 pt)
+```
 * **총 Story Points**: **77 pt** (5인 팀 5주 완수)
+* **총 개발 공수**: **372 Hours** (18개 스토리, 72개 세부 Task)
 
 ---
 
 ## 3. 주차별 세부 구현 작업 (Week 1 ~ Week 5)
 
 ### Week 1: 코어 인프라 셋업, Expo 보일러플레이트 & 기본 라우팅
-* **주간 목표**: 개발 환경 통일, Expo 프로젝트 초기화, Supabase 간편 이메일 Auth 연동, 기본 라우팅 API 연결.
+* **주간 목표**: 개발 환경 통일, Expo 프로젝트 초기화, Supabase 간편 이메일 Auth 연동, 기본 라우팅 API 연결, Git 협업 룰 확립.
 * **세부 작업**:
-  * **Member A**: LangGraph 상태 그래프 정의, 자연어 발화 엔티티 추출 ReAct 프롬프트 초안 작성 (US-A1).
-  * **Member B**: 현장 위험물(턱, 계단, 공사) 벤치마킹 이미지 20장 수집 및 Gemini Flash Few-shot 프롬프트 셋업 (US-D1).
+  * **Member A**: LangGraph 상태 그래프 정의, 자연어 발화 엔티티 추출 ReAct 프롬프트 초안 작성 및 Pydantic V2 스키마 정의 (US-A1).
+  * **Member B**: 현장 위험물(턱, 계단, 공사) 벤치마킹 이미지 20장 및 공원 종합안내판 이미지 15장 수집, Gemini Flash Few-shot 프롬프트 셋업 (US-D1).
   * **Member C**: FastAPI 보일러플레이트 구성, OpenRouteService / OSRM 라우팅 어댑터 기본 순환 루프 생성 구현 (US-B4).
   * **Member D**: React Native Expo SDK 51+ 프로젝트 초기화, react-native-maps 컴포넌트 마운트 및 모바일 화면 구성.
-  * **Member E**: GitHub 레포지토리 세팅, EAS CLI 환경 구성 및 Supabase 간편 이메일 Auth 연동 (Auto-confirm 활성화).
+  * **Member E**: GitHub 레포지토리 세팅, EAS CLI 환경 구성 및 Supabase 간편 이메일 Auth 연동 (Auto-confirm 활성화), SonarLint CI 게이트 셋업.
 
 ---
 

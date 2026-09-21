@@ -47,7 +47,9 @@ flowchart TB
     end
 
     subgraph Gateway["[API Gateway & Backend] FastAPI (Render / Cloud Run)"]
-        Router[Stateless REST API Router]
+        Router[Stateless REST API Router & CORS]
+        Validator[Pydantic V2 Request Validator]
+    end
         Validator[Pydantic V2 Strict Validator]
     end
 
@@ -71,7 +73,11 @@ flowchart TB
         Users[(auth.users<br/>간편 이메일/비밀번호 계정)]
         Courses[(community_courses<br/>출발지 200m 마스킹 공개 코스)]
         Hazards[(hazard_reports<br/>현장 턱/공사 제보 좌표 및 사진)]
-        Storage[(Supabase Storage - 위험 사진)]
+        Storage[(Supabase Storage - 위험 사진 버킷)]
+    end
+    subgraph Automation["[스케줄 자동화 Tier]"]
+        n8n[n8n Workflow<br/>(기상청 지면열 골든타임 알림)]
+    end
     end
 
     subgraph External["[External Services & APIs]"]
@@ -93,6 +99,17 @@ flowchart TB
     LocalStore -.->|산책 요청 시 일회성 페이로드 동봉| UI
     Router --> Validator --> Agent
     Router --> Tool_Vision
+    Agent --> Tool_Routing
+    Agent --> Tool_DEM
+    Agent --> Tool_Sun
+    Agent --> Tool_Parking
+    Tool_Vision --> VisionAI
+    Tool_Routing --> OSRM
+    Tool_DEM --> GeoData
+    Tool_Sun --> SunCalc
+    Tool_Parking --> PublicAPI
+    Courses -.-> UI
+    Hazards -.-> Agent
 
     Agent <--> State
     Agent --> Tool_Routing
@@ -124,19 +141,24 @@ flowchart TB
 ### 3.1 클라이언트 계층 (React Native Expo App)
 * **프레임워크**: React Native (Expo SDK 51+), TypeScript, react-native-maps, expo-location, expo-speech, expo-camera, `@react-native-async-storage/async-storage`.
 * **주요 구성요소**:
-  1. **Hands-Free Voice Navigation Engine**:
+  1. **Planner Screen UI**:
+     - 반려견 선택 드롭다운, 관절 안심 케어 수준 및 웰니스 기본 설정 표시, 목표 산책 시간 슬라이더(10~90분, 권장 15~60분), 선호 산책 조건 선택 칩(폭신한 흙길/완만한 경사/그늘 우선). (※ 슬개골 탈구 등 질병 용어 전면 배제)
+  2. **Map Route Viewer (React Native Maps)**:
+     - GeoJSON 기반 구간별 보행 속성 분기 렌더링:
+       - 🌿 잔디/완만길: `#10B981` (Green-500)
+       - 🍂 흙길: `#B45309` (Amber-700)
+       - 🏃 탄성포장: `#F97316` (Orange-500)
+       - 🏢 보도블록/일반길: `#3B82F6` (Blue-500)
+       - ⚠️ 높은 턱/주의구간: `#EF4444` (Red-500)
+  3. **Hands-Free Voice Navigation Engine**:
      - **Android Foreground Service**로 백그라운드 GPS 위치를 지속 수신.
-     - OSRM/ORS `steps` 정보(회전각, 거리)와 경로 속성을 결합해 30m 전 `expo-speech` 사전 브리핑 송출 (*"50m 앞 부드러운 완만길입니다. 우회전하세요"*).
-  2. **EAS Update 무중단 OTA 모듈**:
+     - OSRM/ORS `steps` 정보(회전각, 거리)와 경로 속성을 결합해 30m 전 `expo-speech` 사전 브리핑 송출 (*"50m 앞 완만한 흙길입니다. 우회전하세요"*).
+  4. **AsyncStorage Local Storage Manager**:
+     - `dog_profile`: 체급, 연령, 관절 안심 케어 수준 로컬 보관 (서버 미전송).
+     - `walk_history`: 실제 보행 GPS 궤적 및 완주 인포그래픽 데이터 영구 보관.
+     - `favorites`: 나만의 안심 코스 즐겨찾기 북마크 로컬 캐싱 및 즉시 재산책 연동.
+  5. **EAS Update 무중단 OTA 모듈**:
      - 앱 시작 시 Expo CDN에서 최신 JS 번들 체크 및 무선 무점검 핫픽스 즉시 적용.
-  3. **AsyncStorage Local Storage Manager**:
-     - `dog_profile`: 체급, 연령, 관절 안심 케어 수준 로컬 보관.
-     - `private_walks`: 자택 좌표가 포함된 개인 보행 궤적 및 개인 피드백 로컬 보관.
-     - `backup_service`: JSON 파일 내보내기/가져오기 지원.
-  4. **Map Route Viewer**:
-     - GeoJSON Polyline 색상 분기 렌더링 (그늘/완만: 초록, 일반: 파랑, 주의: 주황).
-  5. **간편 이메일 로그인 모달**:
-     - `supabase.auth.signUp` 기반 간편 이메일/비밀번호 가입 및 로그인.
 
 ---
 
@@ -199,7 +221,42 @@ flowchart TB
 
 ---
 
-## 5. 데이터베이스 스키마 설계 (Supabase Cloud)
+### 3.5 데이터베이스 및 영속성 계층 (Local-First + Supabase Cloud)
+
+#### 1. 클라이언트 로컬 스토리지 계층 (`AsyncStorage`)
+민감한 개인정보(자택 위치, 상세 보행 GPS 궤적)와 반려견 신체 프로필을 보호하기 위해 클라이언트 로컬에만 영속 보관한다.
+
+```json
+// AsyncStorage 키: @PawTrail:dog_profile
+{
+  "id": "dog_local_01",
+  "name": "초코",
+  "breed": "Maltese",
+  "weight_kg": 3.8,
+  "age_years": 9,
+  "joint_care_level": 2, // 0: 일반, 1: 예방, 2: 관절 안심 케어
+  "preferred_conditions": {
+    "avoid_stairs": true,
+    "max_slope_percent": 8,
+    "shade_priority": true
+  }
+}
+
+// AsyncStorage 키: @PawTrail:favorites (나만의 코스 북마크)
+[
+  {
+    "course_id": "fav_local_01",
+    "title": "우리 동네 숲길 완만 코스",
+    "target_duration_min": 25,
+    "total_distance_m": 1280.0,
+    "geojson": { "type": "FeatureCollection", "features": [...] },
+    "created_at": "2026-09-21T10:00:00Z"
+  }
+]
+```
+
+#### 2. 중앙 클라우드 데이터베이스 스키마 (`Supabase Cloud PostgreSQL`)
+커뮤니티 공개 코스(출발지 200m 마스킹) 및 현장 위험 제보를 위해 중앙 관리한다.
 
 ```sql
 -- 1. 사용자 계정 (Supabase Auth 기본 연동)
@@ -211,40 +268,137 @@ CREATE TABLE community_courses (
     author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     title TEXT NOT NULL,
     total_distance_m NUMERIC(7, 1) NOT NULL,
-    estimated_duration_min INT NOT NULL,
-    has_stairs BOOLEAN DEFAULT false,
-    max_slope_percent NUMERIC(4, 1),
-    average_shade_ratio NUMERIC(3, 2),
-    masked_path_geojson JSONB NOT NULL, -- 출발/도착지 200m 마스킹된 지오메트리
-    likes_count INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT now()
+    estimated_duration_min INTEGER NOT NULL,
+    stairs_count INTEGER NOT NULL DEFAULT 0,
+    max_slope_percent NUMERIC(4, 1) NOT NULL,
+    shade_ratio NUMERIC(3, 2) NOT NULL,
+    masked_route_geojson JSONB NOT NULL, -- 출발지 200m 잘라내기/블러링 적용 좌표
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. 현장 위험 제보 테이블 (공공 안전 목적)
+-- 3. 현장 위험물 제보 (높은 턱, 야외 계단, 공사 구간)
 CREATE TABLE hazard_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reporter_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    lat NUMERIC(9, 6) NOT NULL,
-    lon NUMERIC(9, 6) NOT NULL,
-    hazard_type TEXT NOT NULL, -- 'high_curb', 'unregistered_stairs', 'construction'
-    severity TEXT NOT NULL,    -- 'low', 'medium', 'high'
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    hazard_type VARCHAR(50) NOT NULL, -- 'high_curb', 'outdoor_stairs', 'construction'
     image_url TEXT,
-    comment TEXT,
-    created_at TIMESTAMPTZ DEFAULT now()
+    severity VARCHAR(20) DEFAULT 'warning',
+    verified_by_ai BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. 코스 좋아요(북마크) 테이블
-CREATE TABLE course_likes (
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    course_id UUID REFERENCES community_courses(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    PRIMARY KEY (user_id, course_id)
-);
+-- 4. RLS 보안 정책: 누구나 공개 코스 조회 가능, 작성자만 수정/삭제
+ALTER TABLE community_courses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public courses read" ON community_courses FOR SELECT USING (true);
+CREATE POLICY "Users can create courses" ON community_courses FOR INSERT WITH CHECK (auth.uid() = author_id);
+```
 ```
 
 ---
 
+## 4. 핵심 시퀀스 워크플로우 (Sequence Diagrams)
+
+### 4.1 맞춤형 산책로 생성 및 핸즈프리 음성 길 안내 플로우
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 견주 (React Native Expo)
+    participant Front as Expo App (Frontend)
+    participant Navi as Voice Navi Engine (Foreground Service)
+    participant API as FastAPI Backend
+    participant Agent as LangGraph Agent
+    participant RouterTool as Routing Tool (ORS/OSRM)
+
+    User->>Front: 산책 조건 입력 ("완만한 길로 20분 코스")
+    Front->>Front: 로컬 AsyncStorage에서 반려견 프로필 병합
+    Front->>API: POST /api/walks/plan (조건 + Stateless DogProfile)
+    API->>Agent: Run WalkPlanningGraph(input)
+    Agent->>RouterTool: generate_loop_route(origin, avoid_stairs=True, dur=20m)
+    RouterTool-->>Agent: GeoJSON 순환 경로 + 회전(steps) + 경사/그늘 지표
+    Agent-->>API: 최적 경로 및 안전 브리핑 코멘트
+    API-->>Front: WalkPlanResponse (GeoJSON + 턴/위험 안내 steps)
+    Front->>User: 지도 위 색상 분기 Polyline 및 코스 요약 프리뷰
+    
+    User->>Front: [핸즈프리 산책 시작] 탭 ➔ 스마트폰 주머니 보관 (화면 Off)
+    Front->>Navi: Start Android Foreground Service (GPS + TTS 활성화)
+    Navi-->>User: (TTS 음성 안내) "포트레일 산책을 시작합니다. 50m 앞 완만한 길입니다. 우회전하세요."
+    
+    loop 백그라운드 실시간 보행 (화면 꺼짐 상태)
+        Navi->>Navi: Foreground Service GPS 주기적 수신 & 경로 스냅
+        opt 턴 또는 위험 지점 30m 전 도달
+            Navi-->>User: (TTS 음성 안내) "30m 앞 높은 턱 주의 구간입니다. 발밑을 살펴주세요."
+        end
+    end
+
+    User->>Front: 산책 완료 후 스마트폰 화면 켜기 & 완주 확인
+    Front->>Front: AsyncStorage에 완주 궤적 및 나만의 코스 즐겨찾기 저장
+```
+
+### 4.2 비전 AI 특화 플로우 (Vision AI Workflows)
+
+#### 4.2.1 공원 종합안내판 비전 분석 및 코스 제약조건 도출 (산책 전)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 견주 (공원 입구)
+    participant Front as Expo App (Frontend)
+    participant API as FastAPI Backend
+    participant Vision as Gemini Flash (ParkBoardInspector)
+    participant Agent as LangGraph Agent
+
+    User->>Front: 공원 종합안내판 사진 촬영 및 업로드
+    Front->>API: POST /api/walks/inspect-board (Multipart Image)
+    API->>Vision: ParkBoardInspection Schema 질의 (공원명/노면범례/반려견제한구역)
+    Vision-->>API: ParkBoardInspectionResult (흙길 산책로, 반려견 금지 잔디마당)
+    API->>Agent: 안내판 제약조건 반영 (금지 구역 제외 & 흙길 Waypoint 우선화)
+    Agent-->>API: 안전 맞춤형 공원 순환 경로 반환
+    API-->>Front: 안내판 분석 결과 요약 모달 + 맞춤 추천 경로 렌더링
+```
+
+#### 4.2.2 현장 위험물 제보 및 커뮤니티 공유 (산책 중/후)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 견주 (산책 중 위험 구간 발견)
+    participant Front as Expo App (Frontend)
+    participant API as FastAPI Backend
+    participant Vision as Gemini Flash (HazardInspector)
+    participant DB as Supabase Cloud (hazard_reports)
+
+    User->>Front: 현장 위험물(높은 턱/공사) 사진 촬영 업로드
+    Front->>API: POST /api/hazards/report (Photo, Lat, Lng)
+    API->>Vision: 위험물 판독 질의 (턱 높이/공사자재/위험도)
+    Vision-->>API: HazardInspectionResult (hazard_type='high_curb', severity='warning')
+    API->>DB: INSERT into hazard_reports (공공 안전 제보 적재)
+    API-->>Front: "위험 구간 제보 완료. 안전 우회 경로 안내"
+```
+
+---
+
+## 5. 배포 및 인프라 아키텍처 (DevOps / Infrastructure)
+
+| 영역 | 기술 스택 | 배포 대상 | 구성 세부 사항 |
+|---|---|---|---|
+| **Frontend** | React Native (Expo SDK 51+), TypeScript | **EAS (Expo Application Services)** | EAS Build(단 1회 Android APK 배포) + EAS Update(GitHub Actions 연동 무선 OTA 즉시 배포) |
+| **Backend & AI** | FastAPI, Python 3.11 | **Render / Cloud Run** | Docker 컨테이너 기반 자동 빌드, Healthcheck(`/healthz`), CORS 도메인 격리 |
+| **Database & Auth** | Supabase (PostgreSQL) | **Supabase Cloud** | auth.users 간편 이메일/비밀번호, RLS(Row Level Security) 정책, Storage 버킷 |
+| **스케줄 자동화** | n8n | **n8n Cloud / Self-hosted** | 기상청 지면열 연동 일일 크론(오전 9시) ➔ 안전 산책 골든타임 웹훅 발송 |
+| **테스트 & CI** | GitHub Actions | **GitHub CI** | PR 생성 시 자동 Lint(SonarLint) + Pytest/Jest 단위 테스트 100% 통과 게이트 |
+
+---
+
 ## 6. 비기능 아키텍처 및 웰니스 정책
+
+1. **시선 해방 핸즈프리 안전성**:
+   - `expo-location`과 `expo-speech`의 유기적 결합으로 스마트폰 화면 주시를 원천 차단하고 리드줄 통제력 확보.
+2. **배포 효율성**:
+   - EAS Update 기반으로 1회 APK 설치 후 무선 OTA 핫픽스를 실시간 적용하여 테스터 재설치 피로도 완전 해소.
+3. **개인정보 제로 원칙 (Zero PII on Server)**:
+   - 자택 주소 및 상세 보행 GPS 궤적은 폰에만 저장, 커뮤니티 공유 시 출발지/도착지 200m 자동 공간 마스킹.
+4. **긍정적 웰니스 카피라이팅 준수**:
+   - 앱 내에서 '슬개골 탈구' 등 질병 용어를 배제하고 "폭신한 길", "관절 안심 케어" 등 긍정적 웰니스 표현 사용.
 
 1. **시선 해방 안전성**: `expo-location`과 `expo-speech`의 유기적 결합으로 스마트폰 화면 주시를 원천 차단.
 2. **배포 효율성**: EAS Update 기반으로 1회 APK 설치 후 무선 OTA 핫픽스 실시간 적용.
