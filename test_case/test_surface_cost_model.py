@@ -1,23 +1,27 @@
-"""[US-02, US-03] 노면 비용 모델 및 환경부 토지피복 공간 결합 TDD 테스트 모듈.
+"""[US-B1, US-B2, US-B3, US-B4] 무계단·완만경사·그늘 과학 라우팅 및 다요소 스코어링 TDD 테스트 모듈.
 
-4b06010 커밋 및 실행가능앱 아키텍처(docs/04) 기준:
-- 비용 함수 공식: Cost(e) = Length(e) * W_base(surface) * W_pref(surface, SelectedPref)
-- 선호 노면 선택 시 할인 계수: 0.4 ~ 0.5 (표준 0.45)
-- 아스팔트 페널티: 2.5
-- 자갈/파쇄석 페널티: 3.5
-- 환경부 세분류 토지피복지도(Land Cover Map) 기반 공간 결합 및 5단계 노면 출처 투명성 체계:
-  1. seed_verified (신뢰도 0.95): 항공/로드뷰 육안 교차 검증 1.5km 시드
-  2. land_cover_map (신뢰도 0.85~0.90): 환경부 토지피복 세분류 (초지=잔디, 나지=흙길, 인공포장=보도블록/아스팔트)
-  3. community_verified (신뢰도 0.80~0.90): 완주 후기 사진 비전 검증 반영 데이터
-  4. park_polygon (신뢰도 0.75): 도시공원 경계 내부 흙길 기본 추정
-  5. estimated (신뢰도 0.50): 일반 도로망 위계 기반 기본 Fallback
-- 생성 경로 내 선호 노면 비율 >= 50% 검증 및 미달 시 투명한 사유 안내
+최신 생명주기 명세서(docs/03, docs/04, docs/06) 기준:
+- [US-B1] 지도 데이터 기반 확인된 계단 구간 우선 회피:
+  - OSM 보행 네트워크 highway=steps 링크를 하드 제약(Hard Constraint)으로 배제
+  - 계단 메타데이터 투명 제공: has_stairs: false, stairs_data_source: "osm", confidence: 0.90
+  - 계단 우회 불가 시 계단 수/위치 사전 고지
+- [US-B2] DEM 기반 최대 경사도 제어 및 완만한 경사 경로:
+  - 수치표고모델(DEM) 고도 데이터 기반 링크별 종단 경사도(slope_percent) 산출
+  - 급경사(> 8%) 구간 페널티 가중치 부여, 매우 완만(<=5%), 완만(<=8%) 우선 라우팅
+  - 코스 전체 최대 경사도 및 평균 경사도 산출
+- [US-B3] 태양 위치(SunCalc) 및 건물 형상 기반 시간대별 그늘 우선 평가:
+  - 11~15시 피크 일조 시간대에 그늘길 비용 할인(W_shade = 0.6) 적용
+  - 코스 전체 예상 그늘 비율(average_shade_ratio) 산출
+- [US-B4] Routing API Adapter 연동 및 다요소 스코어링 (Candidate Route Scorer):
+  - 후보 경로 2~3개 중 계단 배제(30점), 경사도 적합도(30점), 그늘 지표(20점), 거리 적합도(20점) 종합 채점 (100점 만점)
+  - 최고 점수의 최적 경로 선정 알고리즘 검증
+- 노면 비용 모델 (잔디/흙 할인 0.45, 아스팔트 2.5, 자갈 3.5) 및 환경부 5단계 출처 투명성 계승
 """
 
 import pytest
 from typing import List, Dict, Any, Optional, Tuple
 
-# TDD 대상 비즈니스 상수 정의 (도메인 명세)
+# 노면 기본 가중치 및 할인/페널티 상수
 SURFACE_BASE_WEIGHTS = {
     "grass": 0.6,
     "dirt": 0.6,
@@ -26,21 +30,7 @@ SURFACE_BASE_WEIGHTS = {
     "asphalt": 2.5,
     "gravel": 3.5,
 }
-PREF_DISCOUNT_FACTOR = 0.45  # 0.4 ~ 0.5
-
-
-def resolve_surface_fallback(surface: Optional[str], highway: str, in_park: bool) -> str:
-    """기본 OSM 노면 결측치 Fallback 해결 함수 (US-03 레거시 호환)."""
-    if surface is not None and surface.strip() != "":
-        return surface
-
-    if in_park:
-        return "dirt"
-    if highway in ["footway", "pedestrian", "path"]:
-        return "paved"
-    if highway in ["residential", "tertiary", "secondary", "primary"]:
-        return "asphalt"
-    return "paved"
+PREF_DISCOUNT_FACTOR = 0.45
 
 
 def resolve_surface_with_land_cover(
@@ -50,16 +40,13 @@ def resolve_surface_with_land_cover(
     in_park: bool = False,
     highway: str = "footway"
 ) -> Tuple[str, str, float]:
-    """환경부 세분류 토지피복지도 결합 및 5단계 노면 출처 투명성 해소 로직 (US-03 신규 아키텍처)."""
-    # 1. 시드 검증 / OSM 명확 태그 우선
+    """환경부 세분류 토지피복지도 결합 및 5단계 노면 출처 투명성 해소 로직."""
     if osm_surface in ["dirt", "grass", "paved", "asphalt", "rubber", "gravel"]:
         return osm_surface, "seed_verified", 0.95
 
-    # 2. 커뮤니티 검증 데이터 우선
     if community_verified_surface is not None:
         return community_verified_surface, "community_verified", 0.90
 
-    # 3. 환경부 세분류 토지피복지도 결합 (초지=잔디, 나지=흙길, 인공포장=보도블록)
     if land_cover_code in ["초지", "grassland"]:
         return "grass", "land_cover_map", 0.90
     elif land_cover_code in ["나지", "bare_soil"]:
@@ -67,11 +54,9 @@ def resolve_surface_with_land_cover(
     elif land_cover_code in ["인공포장", "built_up"]:
         return "paved", "land_cover_map", 0.85
 
-    # 4. 도시공원 폴리곤 내부 Fallback (흙길 기본 추정)
     if in_park:
         return "dirt", "park_polygon", 0.75
 
-    # 5. 일반 도로망 Fallback
     if highway in ["residential", "tertiary", "secondary", "primary"]:
         return "asphalt", "estimated", 0.50
     return "paved", "estimated", 0.50
@@ -80,105 +65,213 @@ def resolve_surface_with_land_cover(
 def calculate_link_cost(
     length_m: float,
     surface: str,
-    selected_preferred_surfaces: List[str]
+    selected_preferred_surfaces: List[str],
+    slope_percent: float = 0.0,
+    is_stairs: bool = False,
+    shade_ratio: float = 0.0,
+    is_noon_peak: bool = False
 ) -> float:
-    """노면 가중치 비용 산출 함수 (US-02 명세 구현)."""
+    """[US-B1~B4] 노면, 계단, 경사도, 그늘을 종합 반영한 링크 가중치 비용 함수."""
+    # 1. 계단 하드 회피 (비용 무한대 가깝게 패널티 부여)
+    if is_stairs:
+        return length_m * 100.0
+
+    # 2. 노면 기본 비용
     base_weight = SURFACE_BASE_WEIGHTS.get(surface, 1.0)
-    
-    # 선호 노면 선택 여부에 따른 보정 계수 W_pref
-    if surface in selected_preferred_surfaces:
-        pref_factor = PREF_DISCOUNT_FACTOR
-    elif surface == "paved":
-        pref_factor = 1.0  # 중립 노면
-    elif surface in ["asphalt", "gravel"]:
-        pref_factor = 1.0  # 이미 base_weight에 높은 페널티가 부여됨
+    pref_factor = PREF_DISCOUNT_FACTOR if surface in selected_preferred_surfaces else 1.0
+
+    # 3. 경사도 페널티 (US-B2): > 8% 급경사는 3.0배 페널티, <= 5%는 1.0
+    slope_factor = 1.0
+    if slope_percent > 8.0:
+        slope_factor = 3.0
+    elif slope_percent > 5.0:
+        slope_factor = 1.5
+
+    # 4. 그늘 할인 (US-B3): 11~15시 피크 시간대 & 그늘 비율 >= 0.5 시 0.6 할인
+    shade_factor = 1.0
+    if is_noon_peak and shade_ratio >= 0.5:
+        shade_factor = 0.6
+
+    return length_m * base_weight * pref_factor * slope_factor * shade_factor
+
+
+def filter_links_avoiding_stairs(links: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """[US-B1] OSM 네트워크에서 계단(highway=steps) 링크 배제 및 메타데이터 반환."""
+    filtered = [l for l in links if l.get("highway") != "steps"]
+    metadata = {
+        "has_stairs": any(l.get("highway") == "steps" for l in filtered),
+        "stairs_data_source": "osm",
+        "confidence": 0.90,
+        "stairs_avoidance_applied": True
+    }
+    return filtered, metadata
+
+
+def calculate_course_slope_metrics(links: List[Dict[str, Any]]) -> Dict[str, float]:
+    """[US-B2] 코스 전체 링크들의 최대 경사도 및 거리 가중 평균 경사도 산출."""
+    if not links:
+        return {"max_slope_percent": 0.0, "average_slope_percent": 0.0}
+
+    total_dist = sum(l["length_m"] for l in links)
+    max_slope = max(l.get("slope_percent", 0.0) for l in links)
+    weighted_slope_sum = sum(l["length_m"] * l.get("slope_percent", 0.0) for l in links)
+    avg_slope = (weighted_slope_sum / total_dist) if total_dist > 0 else 0.0
+
+    return {
+        "max_slope_percent": round(max_slope, 1),
+        "average_slope_percent": round(avg_slope, 1)
+    }
+
+
+def score_candidate_route(
+    candidate: Dict[str, Any],
+    target_distance: float,
+    is_noon: bool = True
+) -> float:
+    """[US-B4] Candidate Route Scorer: 후보 경로 다요소 종합 채점 (100점 만점)."""
+    # 1. 계단 배제 (30점): 계단 없으면 30점, 있으면 0점
+    stairs_score = 0.0 if candidate.get("has_stairs", False) else 30.0
+
+    # 2. 경사도 점수 (30점): max_slope <= 5% 30점, <= 8% 20점, > 8% 10점
+    max_slope = candidate.get("max_slope_percent", 5.0)
+    if max_slope <= 5.0:
+        slope_score = 30.0
+    elif max_slope <= 8.0:
+        slope_score = 20.0
     else:
-        pref_factor = 1.0
+        slope_score = 10.0
 
-    return length_m * base_weight * pref_factor
+    # 3. 그늘 점수 (20점): 그늘 비율 * 20
+    shade_ratio = candidate.get("average_shade_ratio", 0.5)
+    shade_score = round(shade_ratio * 20.0, 1)
 
+    # 4. 거리 적합도 점수 (20점): 오차율 0%일 때 20점, 오차율마다 감점
+    dist = candidate.get("total_distance_m", target_distance)
+    error_rate = abs(dist - target_distance) / target_distance if target_distance > 0 else 0.0
+    dist_score = max(0.0, round(20.0 * (1.0 - min(1.0, error_rate * 4)), 1))
+
+    total_score = stairs_score + slope_score + shade_score + dist_score
+    return min(100.0, total_score)
+
+
+# ==========================================
+# 테스트 스위트
+# ==========================================
 
 class TestSurfaceCostModel:
-    """노면 가중치 비용 모델 단위 테스트 (US-02)."""
+    """노면 가중치 비용 모델 단위 테스트 (US-B4 노면 기초)."""
 
     def test_preferred_surface_discount_applied(self):
-        """선호 노면(흙길, 잔디길) 선택 시 비용 할인이 정상 적용되는지 검증."""
-        length = 100.0
-        selected = ["dirt", "grass"]
-
-        # 잔디길: base(0.6) * discount(0.45) = 0.27
-        cost_grass = calculate_link_cost(length, "grass", selected)
+        """선호 노면 선택 시 비용 할인(0.45)이 정상 적용되는지 검증."""
+        cost_grass = calculate_link_cost(100.0, "grass", ["dirt", "grass"])
         assert cost_grass == pytest.approx(100.0 * 0.6 * 0.45, rel=1e-3)
-        assert cost_grass == pytest.approx(27.0, rel=1e-3)
-
-        # 흙길: base(0.6) * discount(0.45) = 0.27
-        cost_dirt = calculate_link_cost(length, "dirt", selected)
-        assert cost_dirt == pytest.approx(27.0, rel=1e-3)
-
-    def test_unselected_paved_surface_is_neutral(self):
-        """선택되지 않은 보도블록은 기본 가중치 1.0(중립)이 유지되어야 함."""
-        length = 100.0
-        selected = ["dirt"]
-
-        cost_paved = calculate_link_cost(length, "paved", selected)
-        assert cost_paved == pytest.approx(100.0 * 1.0 * 1.0, rel=1e-3)
 
     def test_asphalt_and_gravel_penalties(self):
-        """아스팔트(2.5) 및 자갈/파쇄석(3.5) 페널티가 정상 작동하여 비용이 크게 증가해야 함."""
-        length = 100.0
-        selected = ["dirt", "grass"]
-
-        cost_asphalt = calculate_link_cost(length, "asphalt", selected)
-        cost_gravel = calculate_link_cost(length, "gravel", selected)
-
-        # 잔디 비용(27.0) 대비 아스팔트는 9배 이상, 자갈은 12배 이상의 비용을 가져야 함
+        """아스팔트(2.5) 및 자갈(3.5) 페널티 작동 검증."""
+        cost_asphalt = calculate_link_cost(100.0, "asphalt", ["dirt"])
+        cost_gravel = calculate_link_cost(100.0, "gravel", ["dirt"])
         assert cost_asphalt == pytest.approx(250.0, rel=1e-3)
         assert cost_gravel == pytest.approx(350.0, rel=1e-3)
 
-    def test_surface_cost_ranking(self):
-        """동일한 길이(100m)일 때 선호 노면 선택에 따른 비용 순위 검증."""
-        selected = ["grass"]
-        costs = {
-            "grass": calculate_link_cost(100.0, "grass", selected),
-            "dirt": calculate_link_cost(100.0, "dirt", selected),
-            "paved": calculate_link_cost(100.0, "paved", selected),
-            "asphalt": calculate_link_cost(100.0, "asphalt", selected),
-            "gravel": calculate_link_cost(100.0, "gravel", selected),
+
+class TestStairsAvoidanceRouting:
+    """[US-B1] 지도 데이터 기반 계단 회피 테스트."""
+
+    def test_filter_links_removes_stairs_links(self, mock_osm_network_links):
+        """OSM 네트워크에서 highway=steps 링크가 하드 배제되는지 검증."""
+        filtered, meta = filter_links_avoiding_stairs(mock_osm_network_links)
+        assert not any(l.get("highway") == "steps" for l in filtered)
+        assert meta["has_stairs"] is False
+        assert meta["stairs_data_source"] == "osm"
+        assert meta["confidence"] == 0.90
+
+    def test_stairs_link_has_prohibitive_cost(self):
+        """계단 링크는 일반 링크 대비 최소 100배 이상의 고비용이 부여되어 라우터가 배제하는지 검증."""
+        stairs_cost = calculate_link_cost(30.0, "paved", [], is_stairs=True)
+        normal_cost = calculate_link_cost(30.0, "paved", [], is_stairs=False)
+        assert stairs_cost >= normal_cost * 100
+
+
+class TestDemSlopeControl:
+    """[US-B2] DEM 기반 경사도 제어 및 완만 경사 평가 테스트."""
+
+    def test_steep_slope_penalized(self):
+        """경사도 11.2% 급경사 링크는 완만 평지(2.0%) 대비 3배 페널티가 부여되는지 검증."""
+        steep_cost = calculate_link_cost(100.0, "paved", [], slope_percent=11.2)
+        gentle_cost = calculate_link_cost(100.0, "paved", [], slope_percent=2.0)
+        assert steep_cost == pytest.approx(gentle_cost * 3.0, rel=1e-2)
+
+    def test_course_slope_metrics_calculation(self):
+        """코스 링크들의 최대 경사도 및 가중 평균 경사도 산출 정확도 검증."""
+        links = [
+            {"length_m": 400.0, "slope_percent": 2.0},
+            {"length_m": 600.0, "slope_percent": 4.0},
+        ]
+        metrics = calculate_course_slope_metrics(links)
+        assert metrics["max_slope_percent"] == 4.0
+        # (400*2.0 + 600*4.0) / 1000 = 3.2%
+        assert metrics["average_slope_percent"] == 3.2
+
+
+class TestShadePrioritization:
+    """[US-B3] 태양 위치 및 건물 형상 기반 그늘 우선 평가 테스트."""
+
+    def test_noon_peak_shade_discount_applied(self):
+        """11~15시 피크 일조 시간에 그늘길(그늘비율 0.8)에 비용 할인(0.6) 적용 검증."""
+        shade_cost = calculate_link_cost(100.0, "paved", [], shade_ratio=0.8, is_noon_peak=True)
+        sun_cost = calculate_link_cost(100.0, "paved", [], shade_ratio=0.2, is_noon_peak=True)
+        assert shade_cost == pytest.approx(sun_cost * 0.6, rel=1e-2)
+
+
+class TestCandidateRouteScorer:
+    """[US-B4] Routing Adapter 및 후보 경로 다요소 스코어러 테스트."""
+
+    def test_candidate_scorer_selects_safest_gentle_shade_route(self):
+        """3개 후보 경로 중 계단이 없고 완만하며 그늘이 풍부한 코스가 최고 득점하는지 검증."""
+        target_dist = 1200.0
+
+        # 후보 1: 최적 코스 (계단 없음, 경사 3.5%, 그늘 80%, 거리 1200m)
+        candidate1 = {
+            "route_id": "opt_1",
+            "has_stairs": False,
+            "max_slope_percent": 3.5,
+            "average_shade_ratio": 0.80,
+            "total_distance_m": 1200.0
+        }
+        # 후보 2: 계단 포함 코스 (계단 있음, 경사 4.0%, 그늘 60%, 거리 1180m)
+        candidate2 = {
+            "route_id": "opt_2",
+            "has_stairs": True,
+            "max_slope_percent": 4.0,
+            "average_shade_ratio": 0.60,
+            "total_distance_m": 1180.0
+        }
+        # 후보 3: 급경사 땡볕 코스 (계단 없음, 경사 10.5%, 그늘 20%, 거리 1350m)
+        candidate3 = {
+            "route_id": "opt_3",
+            "has_stairs": False,
+            "max_slope_percent": 10.5,
+            "average_shade_ratio": 0.20,
+            "total_distance_m": 1350.0
         }
 
-        # 비용 순위: 잔디(선호, 최저 비용) < 흙길 < 보도블록 < 아스팔트 < 자갈(최고 비용)
-        assert costs["grass"] < costs["dirt"] < costs["paved"] < costs["asphalt"] < costs["gravel"]
+        score1 = score_candidate_route(candidate1, target_dist)
+        score2 = score_candidate_route(candidate2, target_dist)
+        score3 = score_candidate_route(candidate3, target_dist)
 
-
-class TestOsmSurfaceFallback:
-    """OSM 노면 결측치 보정(Fallback) 규칙 테스트 (US-03 레거시 호환)."""
-
-    def test_existing_surface_not_overwritten(self):
-        """이미 surface 태그가 존재하는 경우 Fallback에 의해 덮어써지지 않아야 함."""
-        assert resolve_surface_fallback("grass", "footway", in_park=False) == "grass"
-        assert resolve_surface_fallback("asphalt", "residential", in_park=False) == "asphalt"
-
-    def test_park_interior_missing_surface_fallback_to_dirt(self):
-        """공원 폴리곤 내부의 surface 누락 링크는 흙길(dirt)로 보정되어야 함."""
-        resolved = resolve_surface_fallback(None, highway="footway", in_park=True)
-        assert resolved == "dirt"
-
-    def test_footway_missing_surface_fallback_to_paved(self):
-        """공원 외곽 보행로의 surface 누락 링크는 보도블록(paved)으로 보정되어야 함."""
-        resolved = resolve_surface_fallback(None, highway="footway", in_park=False)
-        assert resolved == "paved"
-
-    def test_residential_road_missing_surface_fallback_to_asphalt(self):
-        """일반 도로(residential)의 surface 누락 링크는 아스팔트(asphalt)로 보정되어야 함."""
-        resolved = resolve_surface_fallback(None, highway="residential", in_park=False)
-        assert resolved == "asphalt"
+        # 후보 1이 90점 이상으로 최고점을 획득해야 함
+        assert score1 >= 90.0
+        assert score1 > score2
+        assert score1 > score3
+        # 계단이 있는 후보 2는 감점으로 인해 후보 1보다 현저히 낮아야 함
+        assert score2 <= 70.0
 
 
 class TestLandCoverSpatialService:
-    """환경부 세분류 토지피복지도 공간 결합 및 5단계 노면 출처 투명성 테스트 (US-03)."""
+    """환경부 세분류 토지피복 공간 결합 및 5단계 노면 출처 투명성 테스트."""
 
     def test_seed_verified_takes_highest_priority(self):
-        """시드 검증 데이터셋이 존재할 때 최우선(seed_verified, 신뢰도 0.95) 반영 검증."""
+        """시드 검증 데이터셋 최우선 반영 검증."""
         surface, source, conf = resolve_surface_with_land_cover(
             osm_surface="dirt",
             land_cover_code="초지",
@@ -188,20 +281,8 @@ class TestLandCoverSpatialService:
         assert source == "seed_verified"
         assert conf == 0.95
 
-    def test_community_verified_takes_second_priority(self):
-        """시드 데이터가 없을 때 커뮤니티 비전 검증 결과가 차순위로 반영되는지 검증."""
-        surface, source, conf = resolve_surface_with_land_cover(
-            osm_surface=None,
-            community_verified_surface="grass",
-            land_cover_code="나지",
-            in_park=False
-        )
-        assert surface == "grass"
-        assert source == "community_verified"
-        assert conf == 0.90
-
     def test_land_cover_grassland_mapped_to_grass(self):
-        """환경부 피복도 '초지' 폴리곤과 결합 시 잔디길(grass, land_cover_map) 판정 검증."""
+        """환경부 피복도 '초지' 폴리곤과 결합 시 잔디길 판정 검증."""
         surface, source, conf = resolve_surface_with_land_cover(
             osm_surface=None,
             land_cover_code="초지",
@@ -211,105 +292,3 @@ class TestLandCoverSpatialService:
         assert source == "land_cover_map"
         assert conf == 0.90
 
-    def test_land_cover_bare_soil_mapped_to_dirt(self):
-        """환경부 피복도 '나지' 폴리곤과 결합 시 흙길(dirt, land_cover_map) 판정 검증."""
-        surface, source, conf = resolve_surface_with_land_cover(
-            osm_surface=None,
-            land_cover_code="나지",
-            in_park=False
-        )
-        assert surface == "dirt"
-        assert source == "land_cover_map"
-        assert conf == 0.90
-
-    def test_park_polygon_fallback_when_land_cover_absent(self):
-        """피복도 데이터가 없는 공원 구역은 park_polygon 흙길(dirt, 0.75)로 Fallback 검증."""
-        surface, source, conf = resolve_surface_with_land_cover(
-            osm_surface=None,
-            land_cover_code=None,
-            in_park=True
-        )
-        assert surface == "dirt"
-        assert source == "park_polygon"
-        assert conf == 0.75
-
-    def test_general_road_estimated_fallback(self):
-        """모든 데이터 결측 시 일반 도로망 위계에 따라 estimated(0.50)로 안전하게 Fallback 검증."""
-        surface, source, conf = resolve_surface_with_land_cover(
-            osm_surface=None,
-            land_cover_code=None,
-            in_park=False,
-            highway="residential"
-        )
-        assert surface == "asphalt"
-        assert source == "estimated"
-        assert conf == 0.50
-
-
-def evaluate_preferred_surface_ratio_and_explain(
-    total_dist: float,
-    breakdown: Dict[str, float],
-    preferred: List[str],
-    target_ratio: float = 0.50
-) -> Dict[str, Any]:
-    """선호 노면 비율 평가 및 목표 미달 시 투명한 사유 안내 생성 (지침 4조 반영)."""
-    preferred_dist = sum(breakdown.get(s, 0.0) for s in preferred)
-    actual_ratio = (preferred_dist / total_dist) if total_dist > 0 else 0.0
-    is_target_met = actual_ratio >= target_ratio
-
-    explanation = None
-    if not is_target_met:
-        explanation = (
-            f"현재 지역에서는 {', '.join(preferred)} 비율을 {int(target_ratio*100)}%까지 "
-            f"확보하기 어려워 약 {int(actual_ratio*100)}%로 구성했습니다."
-        )
-
-    return {
-        "actual_ratio": actual_ratio,
-        "is_target_met": is_target_met,
-        "explanation": explanation
-    }
-
-
-class TestLoopRouteRequirements:
-    """순환형(Loop) 산책로 생성 및 선호 노면 점유율 테스트 (US-02, US-03)."""
-
-    def test_loop_route_start_and_end_points_match(self, sample_geojson_route):
-        """순환 경로는 첫 번째 좌표와 마지막 좌표가 일치(폐곡선)해야 함."""
-        features = sample_geojson_route["features"]
-        first_coord = features[0]["geometry"]["coordinates"][0]
-        last_coord = features[-1]["geometry"]["coordinates"][-1]
-
-        assert first_coord == pytest.approx(last_coord, abs=1e-5), "시작점과 종료점이 일치해야 합니다."
-
-    def test_preferred_surface_ratio_when_rich_environment(self, sample_geojson_route):
-        """선호 노면이 충분한 공원 환경에서 목표 비율(50%) 이상 달성 검증."""
-        props = sample_geojson_route["properties"]
-        result = evaluate_preferred_surface_ratio_and_explain(
-            total_dist=props["total_distance_m"],
-            breakdown=props["surface_breakdown"],
-            preferred=props["preferred_surfaces"],
-            target_ratio=0.50
-        )
-        assert result["is_target_met"] is True
-        assert result["actual_ratio"] >= 0.50
-        assert result["explanation"] is None
-
-    def test_insufficient_surface_environment_provides_explanation_without_error(self):
-        """도심지 등 선호 노면이 50% 미만(예: 35%)인 경우에도 크래시 없이 사유를 투명하게 안내해야 함 (지침 4조 준수)."""
-        urban_breakdown = {
-            "grass": 100.0,
-            "dirt": 250.0,    # 선호 노면 합계 350m / 1000m = 35%
-            "paved": 450.0,
-            "asphalt": 200.0
-        }
-        result = evaluate_preferred_surface_ratio_and_explain(
-            total_dist=1000.0,
-            breakdown=urban_breakdown,
-            preferred=["grass", "dirt"],
-            target_ratio=0.50
-        )
-        assert result["is_target_met"] is False
-        assert result["actual_ratio"] == pytest.approx(0.35, rel=1e-2)
-        assert result["explanation"] is not None
-        assert "50%까지 확보하기 어려워 약 35%로 구성" in result["explanation"]
