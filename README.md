@@ -195,15 +195,15 @@ flowchart TD
 ## 5. 👥 팀 구성 및 역할 분담 (Team Roles)
 
 팀원 5명이 각자의 전문 영역을 맡아 5주 애자일 스프린트 체계로 개발을 진행합니다.  
-(총 16개 User Story / 55개 Task / 62 Story Points / 334 Hours)
+(총 18개 User Story / 68개 Task / 77 Story Points / 372 Hours)
 
 | 팀원 | 핵심 역할 | 주 업무 영역 및 기술 스택 | 담당 사용자 스토리 | 공수 |
 |:---:|---|---|---|:---:|
-| **Member A** | **PM & AI Agent Lead** | • 프로젝트 총괄 및 스프린트 일정 관리<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 및 Clarification 대화 루프 구축 | **US-01, US-02, US-16** | 62 h |
-| **Member B** | **AI / Vision Lead** | • Gemini Flash 비전 프롬프트 엔지니어링<br/>• 공원 종합안내판 판독(`ParkBoardInspector`) 및 후기 사진 검증(`CommunityMapEnricher`) | **US-04, US-05** | 48 h |
-| **Member C** | **Backend & Routing Lead** | • FastAPI 백엔드 구축 및 REST API 계약 구현<br/>• 환경부 토지피복 GeoPandas Spatial Join, 노면 비용 모델 및 순환 루프 라우터 | **US-02, US-03, US-13, US-16** | 90 h |
-| **Member D** | **Frontend & UI/UX Lead** | • React Native Expo 기반 모바일 앱 구현<br/>• Android Foreground Service & `expo-speech` 핸즈프리 음성 길 안내, 다크 포켓 모드 | **US-07, US-08, US-09, US-14, US-15** | 79 h |
-| **Member E** | **Infra, QA & DevOps Lead** | • Supabase DB 모델링 및 EAS Build/Update 무선 OTA 파이프라인 수립<br/>• n8n 지면열 자동화 워크플로우 및 **5인 실사용자 CBT 총괄** | **US-06, US-10, US-11, US-12, US-14** | 55 h |
+| **Member A** | **PM & AI Agent Lead** | • 프로젝트 총괄 및 스프린트 일정 관리<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 및 다요소 라우팅 스코어링 결합 | **US-A1, US-A3, US-B4, US-D2, US-E3** | 65 h (17.5%) |
+| **Member B** | **AI & Spatial Data Engineer** | • Gemini Flash 비전 멀티모달 에이전트(`ParkBoardInspector`, `HazardInspector`)<br/>• GIS 데이터 파이프라인(DEM 경사도, 태양 위치 그늘 모델링, OSM 계단 필터링) | **US-B1, US-B2, US-B3, US-D1, US-D2, US-F1, US-G1, US-G2** | 71 h (19.1%) |
+| **Member C** | **Backend & Spatial Routing Lead** | • FastAPI 백엔드 구축 및 REST API 계약 구현<br/>• NetworkX 가중치 보행 네트워크 라우팅 엔진, 위험 우회 재탐색 및 캐싱 | **US-B1, US-B2, US-B3, US-B4, US-D2, US-F1, US-G1, US-G2** | 91 h (24.5%) |
+| **Member D** | **Frontend & Mobile App Lead** | • React Native Expo 기반 모바일 클라이언트 앱 코어 구현<br/>• 시선 해방 백그라운드 핸즈프리 음성 안내(Foreground Service + TTS) 및 위치 추적 | **US-A2, US-C1, US-C2, US-D2, US-E1, US-E2, US-E3, US-H1** | 94 h (25.3%) |
+| **Member E** | **UI/UX Designer & Product Experience Lead** | • 디자인 시스템 구축 및 18개 스토리 UI/UX 디자인 에셋 고도화<br/>• EAS Build/Update 무선 배포 및 5인 실사용자 CBT 총괄, 사용자 경험 개선 | **US-A2, US-A3, US-C1, US-E2, US-F1, US-G1, US-G2, US-H1** | 51 h (13.7%) |
 
 ---
 
@@ -216,14 +216,13 @@ docs/
 ├── 00_final_mission.md                      [캡스톤 최종 미션 가이드라인 및 필수 기술 규격]
 ├── 01_PawTrail_Project_Proposal.md           [1단계: 프로젝트 제안서, 문제 정의 및 솔루션]
 ├── 02_PawTrail_Team_building.md              [2단계: 팀 빌딩, 5인 R&R 및 3대 기술 전략]
-├── 03_PawTrail_Agile_User_Stories.md         [3단계: 16개 애자일 사용자 스토리 및 인수 조건(AC)]
+├── 03_PawTrail_Agile_User_Stories.md         [3단계: 18개 애자일 사용자 스토리 및 인수 조건(AC)]
 ├── 04_PawTrail_Architecture_Design.md        [4단계: C4 시스템 설계, 시퀀스 다이어그램 및 DB ERD]
 ├── 05_PawTrail_Detailed_Implementation_Plan.md [5단계: 5주간 주차별 스프린트 마일스톤 및 협업 계획]
-├── 06_PawTrail_Task_Breakdown_and_Estimations.md [6단계: 55개 구현 세부 Task 및 334h 공수 산정]
-├── 07_PawTrail_Presentation_Pain_Points.md   [7단계: 발표 심사 페인포인트 & 4대 기술 돌파구]
-├── 08_PawTrail_Traceability_Matrix.md        [8단계: 요구사항 양방향 추적 매트릭스 (RTM)]
-├── presentation/                             [최종 발표 슬라이드 PPTX (PawTrail_Soft_Path_Engineering.pptx)]
-├── reports/                                  [일일 스크럼 개발 일지 (2026-09-18.md 등)]
+├── 06_PawTrail_Task_Breakdown_and_Estimations.md [6단계: 68개 구현 세부 Task 및 372h 공수 산정]
+├── 07_PawTrail_Traceability_Matrix.md        [7단계: 요구사항 양방향 추적 매트릭스 (RTM)]
+├── presentation/                             [최종 발표 슬라이드 전략 및 Q&A 방어 논리 스크립트]
+├── reports/                                  [일일 스크럼 개발 일지 (2026-09-21.md 등)]
 ├── reviews/                                  [Gemini Code Assist 가이드 및 항공/로드뷰 분석]
 └── screens/                                  [6대 핵심 화면 고화질 목업 및 인터랙티브 웹 뷰어]
 ```

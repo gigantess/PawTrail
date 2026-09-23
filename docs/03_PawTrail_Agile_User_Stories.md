@@ -22,23 +22,23 @@
 | Story ID | 에픽 (Epic) | 사용자 스토리 명칭 | 난이도 | 담당자 | Story Points | 우선순위 |
 |:---:|---|---|:---:|:---:|:---:|:---:|
 | **US-A1** | [Epic A] 산책 조건 입력 & 개인화 | 대화형 자연어 산책 요청 및 조건 구조화 | 중 | Member A | 5 pt | Must |
-| **US-A2** | [Epic A] 산책 조건 입력 & 개인화 | 반려견 프로필 로컬 등록 및 JSON 백업/복원 | 하 | Member D | 3 pt | Must |
-| **US-A3** | [Epic A] 산책 조건 입력 & 개인화 | 목표 산책 시간/거리 기반 환산 (속도/슬라이더) | 중 | Member A, C | 3 pt | Must |
-| **US-B1** | [Epic B] 무계단·완만경사·그늘 라우팅 | 지도 데이터 기반 확인된 계단 구간 우선 회피 | 상 | Member C | 8 pt | Must |
-| **US-B2** | [Epic B] 무계단·완만경사·그늘 라우팅 | DEM 기반 최대 경사도 제어 및 완만 경사 경로 도출 | 중상 | Member C | 5 pt | Must |
-| **US-B3** | [Epic B] 무계단·완만경사·그늘 라우팅 | 태양 위치 및 건물 형상 기반 시간대별 그늘 우선 평가 | 중상 | Member C | 5 pt | Should |
+| **US-A2** | [Epic A] 산책 조건 입력 & 개인화 | 반려견 프로필 로컬 등록 및 JSON 백업/복원 | 하 | Member E, D | 3 pt | Must |
+| **US-A3** | [Epic A] 산책 조건 입력 & 개인화 | 목표 산책 시간/거리 기반 환산 (속도/슬라이더) | 중 | Member A, E | 3 pt | Must |
+| **US-B1** | [Epic B] 무계단·완만경사·그늘 라우팅 | 지도 데이터 기반 확인된 계단 구간 우선 회피 | 상 | Member C, B | 8 pt | Must |
+| **US-B2** | [Epic B] 무계단·완만경사·그늘 라우팅 | DEM 기반 최대 경사도 제어 및 완만 경사 경로 도출 | 중상 | Member C, B | 5 pt | Must |
+| **US-B3** | [Epic B] 무계단·완만경사·그늘 라우팅 | 태양 위치 및 건물 형상 기반 시간대별 그늘 우선 평가 | 중상 | Member C, B | 5 pt | Should |
 | **US-B4** | [Epic B] 무계단·완만경사·그늘 라우팅 | Routing API Adapter 연동 및 후보 경로 다요소 스코어링 | 상 | Member C, A | 8 pt | Must |
-| **US-C1** | [Epic C] 모바일 UI & 핸즈프리 안내 | React Native Maps 기반 구간별 색상 분기 경로 시각화 | 중 | Member D | 5 pt | Must |
+| **US-C1** | [Epic C] 모바일 UI & 핸즈프리 안내 | React Native Maps 기반 구간별 색상 분기 경로 시각화 | 중 | Member D, E | 5 pt | Must |
 | **US-C2** | [Epic C] 모바일 UI & 핸즈프리 안내 | 시선 해방(Eyes-Free) 백그라운드 핸즈프리 음성 길 안내 | 상 | Member D | 5 pt | Must |
 | **US-D1** | [Epic D] 현장 위험 분석 & 재탐색 | Vision AI 기반 현장 턱·계단·보행 장애물 시각 분석 | 중상 | Member B | 5 pt | Must |
-| **US-D2** | [Epic D] 현장 위험 분석 & 재탐색 | 현장 위험 구간 우회 및 동적 재탐색 | 중상 | Member B, C | 5 pt | Should |
+| **US-D2** | [Epic D] 현장 위험 분석 & 재탐색 | 현장 위험 구간 우회 및 동적 재탐색 | 중상 | Member C, B, A, D | 5 pt | Should |
 | **US-E1** | [Epic E] 산책 기록 & Memory (Local-First) | 백그라운드 GPS 위치 추적 및 실산책 경로 로컬 저장 | 중상 | Member D | 5 pt | Must |
-| **US-E2** | [Epic E] 산책 기록 & Memory (Local-First) | 산책 종료 후 보행 체감 피드백 수집 및 로컬 통계 | 하 | Member D | 3 pt | Must |
-| **US-E3** | [Epic E] 산책 기록 & Memory (Local-First) | 로컬 누적 피드백 기반 무상태(Stateless) AI 추천 보정 | 중 | Member A | 3 pt | Should |
-| **US-F1** | [Epic F] 기상 연동 열 위험 관리 | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | 중 | Member E | 3 pt | Should |
-| **US-G1** | [Epic G] 거점 연계 & 커뮤니티 | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | 하 | Member C, D | 2 pt | Should |
-| **US-G2** | [Epic G] 거점 연계 & 커뮤니티 | 간편 이메일 가입 및 코스 공유 (출발지 200m 마스킹) | 중 | Member E, D | 4 pt | Must |
-| **US-H1** | [Epic H] 무중단 배포 & 실사용 검증 | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 | 전원 (Lead: E) | 5 pt | Must |
+| **US-E2** | [Epic E] 산책 기록 & Memory (Local-First) | 산책 종료 후 보행 체감 피드백 수집 및 로컬 통계 | 하 | Member E, D | 3 pt | Must |
+| **US-E3** | [Epic E] 산책 기록 & Memory (Local-First) | 로컬 누적 피드백 기반 무상태(Stateless) AI 추천 보정 | 중 | Member A, D | 3 pt | Should |
+| **US-F1** | [Epic F] 기상 연동 열 위험 관리 | 기상청 단기예보 연동 시간대별 열 위험 지수 안내 | 중 | Member B, C, E | 3 pt | Should |
+| **US-G1** | [Epic G] 거점 연계 & 커뮤니티 | 출발 거점 연계 공영주차장(P&R) 코스 탐색 | 하 | Member B, C, E | 2 pt | Should |
+| **US-G2** | [Epic G] 거점 연계 & 커뮤니티 | 간편 이메일 가입 및 코스 공유 (출발지 200m 마스킹) | 중 | Member C, B, E | 4 pt | Must |
+| **US-H1** | [Epic H] 무중단 배포 & 실사용 검증 | EAS Build 1회 배포, EAS Update 무선 OTA 및 5인 CBT | 상 | 전원 (Lead: Member E, D) | 5 pt | Must |
 | **합계** | **8개 에픽** | **18개 핵심 스토리** | — | — | **77 pt** | — |
 
 ---
@@ -68,7 +68,7 @@
 * **배경 & 차별화**:
   - 서버 DB에 개인정보를 영구 저장하지 않는 Local-First (`AsyncStorage`) 원칙 준수.
   - 앱 전역에서 '슬개골 탈구' 등 질병 용어를 배제하고 '관절 안심 케어 수준(0~2레벨)'으로 긍정적 순화.
-* **우선순위**: Must | **난이도**: 하 | **Story Points**: 3 pt | **담당**: Member D (Frontend)
+* **우선순위**: Must | **난이도**: 하 | **Story Points**: 3 pt | **담당**: Member E, D (Design/Frontend)
 * **인수 조건 (Acceptance Criteria)**:
   1. 견종, 체중, 연령, 관절 안심 케어 선호도를 입력받아 모바일 앱 로컬 스토리지(`AsyncStorage`)에만 영속 저장한다 (서버 DB 미전송).
   2. 기기 변경 및 앱 재설치에 대비하여 "프로필 JSON 파일 내보내기/가져오기" 로컬 파일 백업 기능을 제공한다.
@@ -83,7 +83,7 @@
 * **배경 & 차별화**:
   - 문서 간 산책 시간 범위 및 보행 속도 불일치를 해소하고 표준화된 상수 엔진 도입.
   - 소형견(2.8 km/h), 중형견(3.6 km/h), 대형견(4.2 km/h), 노령견(2.2 km/h) 보행 속도 모델 적용.
-* **우선순위**: Must | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member A, C (Agent/GIS)
+* **우선순위**: Must | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member A, E (Agent/Design)
 * **인수 조건 (Acceptance Criteria)**:
   1. 플래너 UI에서 10~90분 슬라이더(권장 기본값 15~60분)를 제공하며, 선택 시간에 맞추어 목표 보행 거리를 자동 환산한다.
   2. 체급별 보행 속도 모델을 적용하여 생성된 순환 경로의 예상 소요 시간이 목표 시간의 $\pm 15\%$ 오차 범위 내로 수렴하도록 웨이포인트를 동적 튜닝한다.
@@ -101,7 +101,7 @@
   *관절 관리가 필요한 반려견의 견주로서*, 산책로 중간에 갑자기 가파른 야외 계단이 나타나 아이를 안고 오르내리는 상황을 피하고 싶다. *그리하여* 지도 데이터상 계단으로 확인된 구간을 사전에 확실히 우회하는 코스를 걷기를 원한다.
 * **배경 & 차별화**:
   - "100% 무계단 보장"이라는 과장 대신, OSM `highway=steps` 등 가용 지도 데이터 기반의 확인된 계단을 우선 배제하고 투명한 신뢰도 메타데이터 제공.
-* **우선순위**: Must | **난이도**: 상 | **Story Points**: 8 pt | **담당**: Member C (Backend/GIS)
+* **우선순위**: Must | **난이도**: 상 | **Story Points**: 8 pt | **담당**: Member C, B (Backend/Data)
 * **인수 조건 (Acceptance Criteria)**:
   1. OSM 보행 네트워크 그래프에서 `highway=steps` 링크를 하드 제약(Hard Constraint)으로 배제하여 경로 탐색 후보군을 형성한다.
   2. 계단 배제 여부를 응답 메타데이터(`has_stairs: false`, `stairs_data_source: "osm"`, `confidence: 0.90`)로 투명하게 반환한다.
@@ -115,7 +115,7 @@
   *노령견을 키우는 견주로서*, 겉보기엔 길처럼 보여도 심한 오르막이나 내리막으로 이루어진 경사 구간을 피하고 싶다. *그리하여* 완만한 경사의 길로만 구성된 부담 없는 산책로를 안내받기를 원한다.
 * **배경 & 차별화**:
   - 수치표고모델(DEM) 고도 데이터를 공간 분석하여 링크별 종단 경사도(`slope_percent`)를 정밀 산출.
-* **우선순위**: Must | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member C (Backend/GIS)
+* **우선순위**: Must | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member C, B (Backend/Data)
 * **인수 조건 (Acceptance Criteria)**:
   1. DEM 고도 데이터를 도로망 링크에 결합하여 링크별 경사도를 계산하고, 급경사($> 8\%$) 구간에 페널티 가중치를 부여한다.
   2. UI에서는 "매우 완만(5% 이하)", "완만(8% 이하)", "제한 없음" 칩으로 간결하게 선택할 수 있도록 추상화한다.
@@ -129,7 +129,7 @@
   *더운 날씨에 산책하는 견주로서*, 땡볕 아스팔트를 피해 건물 그늘이나 가로수 그늘이 잘 드리워진 시원한 구간을 골라 걷고 싶다. *그리하여* 반려견이 더위를 먹거나 발바닥에 열 손상을 입는 일을 사전에 예방하기를 원한다.
 * **배경 & 차별화**:
   - 사진으로 지면 온도를 측정한다는 무리한 주장을 배제하고, 천문학적 태양 위치(SunCalc)와 건물 2.5D 형상 데이터를 기반으로 과학적인 그늘 지표 산출.
-* **우선순위**: Should | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member C (Backend/GIS)
+* **우선순위**: Should | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member C, B (Backend/Data)
 * **인수 조건 (Acceptance Criteria)**:
   1. 산책 출발 시각의 태양 고도각·방위각(SunCalc)과 건물 높이 레이어를 결합해 구간별 예상 그늘 비율(`shade_ratio`)을 산출한다.
   2. 일조량이 높은 시간대(11~15시)에는 그늘 비율이 높은 링크에 비용 할인 계수($W_{\text{shade}} = 0.6$)를 부여하여 그늘길을 우선 채점한다.
@@ -161,7 +161,7 @@
   *모바일 앱 사용자로서*, 생성된 산책 코스에서 어디가 완만하고 그늘진 안심 구간인지 지도 위 색상으로 한눈에 파악하고 싶다. *그리하여* 코스 전체의 난이도와 분위기를 출발 전에 직관적으로 확인하기를 원한다.
 * **배경 & 차별화**:
   - GeoJSON 링크 속성에 따라 Polyline 색상을 즉시 분기 렌더링하여 높은 시각적 신뢰도 제공.
-* **우선순위**: Must | **난이도**: 중 | **Story Points**: 5 pt | **담당**: Member D (Frontend)
+* **우선순위**: Must | **난이도**: 중 | **Story Points**: 5 pt | **담당**: Member D, E (Frontend/Design)
 * **인수 조건 (Acceptance Criteria)**:
   1. `react-native-maps` 지도 위에 경로 속성에 따른 분기 색상(🌿 완만/그늘: 초록 `#10B981`, 🏢 일반: 파랑 `#3B82F6`, ⚠️ 주의/급경사: 주황 `#F97316`)으로 Polyline을 렌더링한다.
   2. 화면 하단에 코스 요약 카드(총 거리, 예상 시간, 최대 경사, 그늘 비율) 및 OSRM 회전 스텝 리스트 뷰를 표시한다.
@@ -209,7 +209,7 @@
   *산책 중 위험 구간을 만난 견주로서*, 제보되거나 촬영된 위험 지점을 즉시 피해 안전하게 목적지나 출발점으로 돌아가는 대안 경로를 안내받고 싶다. *그리하여* 현장에서 우왕좌왕하지 않고 침착하게 안전 산책을 이어가기를 원한다.
 * **배경 & 차별화**:
   - 위험 지점 좌표를 동적 임시 장애물(Blocked Way)로 등록하고 3초 이내에 안전 우회 경로를 실시간 재산출.
-* **우선순위**: Should | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member B, C (Vision/GIS)
+* **우선순위**: Should | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member C, B, A, D (Routing/Vision/Agent/UI)
 * **인수 조건 (Acceptance Criteria)**:
   1. 위험물 감지 시 해당 링크에 가중치 페널티(비용 10배)를 부여하거나 통행 금지로 설정하여 3초 이내에 안전 우회로를 재탐색한다.
   2. 모바일 클라이언트에 "전방 턱 구간을 우회하여 새로운 경로를 안내합니다" 음성 및 화면 알림을 즉시 갱신한다.
@@ -241,7 +241,7 @@
   *산책을 완료한 견주로서*, 오늘 걸었던 코스가 실제로 완만했는지, 그늘이 충분했는지 원터치로 체감 평가를 남기고 싶다. *그리하여* 내 피드백이 누적되어 다음 산책 추천에 반영되기를 원한다.
 * **배경 & 차별화**:
   - 복잡한 설문 대신 간편한 태그(👍 완만해요, 🌳 그늘 많아요, 🐾 발이 편해요)와 5점 만족도 슬라이더 제공.
-* **우선순위**: Must | **난이도**: 하 | **Story Points**: 3 pt | **담당**: Member D (Frontend)
+* **우선순위**: Must | **난이도**: 하 | **Story Points**: 3 pt | **담당**: Member E, D (Design/Frontend)
 * **인수 조건 (Acceptance Criteria)**:
   1. 산책 종료 시 완주 인포그래픽 카드(총 거리, 소요 시간, 완만 구간 비율)와 함께 3초 간편 피드백 폼을 띄운다.
   2. 사용자의 코멘트 및 만족도 점수를 로컬 산책 기록 메타데이터에 즉시 바인딩한다.
@@ -254,7 +254,7 @@
   *포트레일을 꾸준히 이용하는 견주로서*, "지난번 코스는 조금 가팔랐어"라는 내 피드백을 기억하고 다음번에는 더 완만한 길을 우선 추천해주길 원한다. *그리하여* 쓸수록 우리 아이에게 꼭 맞춰지는 맞춤형 서비스를 경험하기를 원한다.
 * **배경 & 차별화**:
   - 서버 DB에 사용자 히스토리를 쌓지 않고, 클라이언트가 산책 요청 시 '최근 3회 산책 요약 페이로드'를 무상태(Stateless)로 함께 전송하여 AI Agent 프롬프트 가중치에 동적 주입.
-* **우선순위**: Should | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member A (AI Agent)
+* **우선순위**: Should | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member A, D (AI Agent/Frontend)
 * **인수 조건 (Acceptance Criteria)**:
   1. 클라이언트 요청 페이로드의 피드백 요약(예: "경사 불만족 1회")을 감지하여 에이전트가 허용 최대 경사도 기준을 1~2% 하향 조정한다.
   2. 서버는 클라이언트가 전달한 맥락 외에 별도의 개인 식별 정보를 DB에서 조회하지 않는 Stateless 원칙을 유지한다.
@@ -272,7 +272,7 @@
   *여름철 한낮에 산책을 고민하는 견주로서*, 지금 나가도 아스팔트가 너무 뜨겁지 않은지, 몇 시쯤 나가는 것이 안전한지 알고 싶다. *그리하여* 반려견 발바닥 화상 위험을 피하고 가장 안전한 골든타임에 산책하기를 원한다.
 * **배경 & 차별화**:
   - 기상청 단기예보(기온, 일사량)를 수집하여 경험적 지면열 수지식($	ext{Estimated Surface Temp} = 	ext{Air Temp} + (	ext{Insolation Weight} 	imes 15)$)을 실행. 아스팔트 35℃ 이하 안전 시간대 산출.
-* **우선순위**: Should | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member E (Infra/Workflow)
+* **우선순위**: Should | **난이도**: 중 | **Story Points**: 3 pt | **담당**: Member B, C, E (Data/Backend/Design)
 * **인수 조건 (Acceptance Criteria)**:
   1. 매일 오전 기상청 단기예보 데이터를 수집해 시간대별 열 위험 지수(안전/주의/위험) 및 추천 산책 골든타임 카드를 앱 메인에 표시한다.
   2. n8n 자동화 파이프라인을 통해 지면열 위험 정보를 산출하고 백엔드 캐시로 동기화한다.
@@ -286,7 +286,7 @@
   *차량으로 반려견과 공원에 방문한 견주로서*, 인근 공영주차장에 안전하게 차를 대고 주차장 출입구에서 바로 시작하는 순환 산책로를 추천받고 싶다. *그리하여* 주차 위치를 헤매지 않고 안전하고 편리하게 산책을 시작하기를 원한다.
 * **배경 & 차별화**:
   - 전국 공영주차장 공공데이터 API를 연계하여 주차장 출입구 좌표를 출발/도착 웨이포인트로 자동 스냅.
-* **우선순위**: Should | **난이도**: 하 | **Story Points**: 2 pt | **담당**: Member C, D (Backend/Frontend)
+* **우선순위**: Should | **난이도**: 하 | **Story Points**: 2 pt | **담당**: Member B, C, E (Data/Backend/Design)
 * **인수 조건 (Acceptance Criteria)**:
   1. 플래너 화면에서 "주차장 연계(P&R)" 토글 선택 시 현위치 반경 1km 내 공영주차장 목록을 탐색한다.
   2. 선택한 주차장 출입구 보행로에서 출발하여 다시 주차장으로 회귀하는 안심 순환 코스를 생성한다.
@@ -301,7 +301,7 @@
 * **배경 & 차별화**:
   - 복잡한 소셜 OAuth 종속성을 걷어내고 `Supabase Auth` 이메일/비밀번호 간편 가입 운용.
   - 코스 공유 시 자택/출발지 반경 200m 공간 절단 및 블러링(Spatial Jittering) 필수 적용.
-* **우선순위**: Must | **난이도**: 중 | **Story Points**: 4 pt | **담당**: Member E, D (Infra/Frontend)
+* **우선순위**: Must | **난이도**: 중 | **Story Points**: 4 pt | **담당**: Member C, B, E (Backend/Data/Design)
 * **인수 조건 (Acceptance Criteria)**:
   1. 이메일과 비밀번호 입력만으로 1초 만에 회원가입/로그인이 완료된다 (CBT 중 Auto-confirm 적용).
   2. 코스 커뮤니티 공유 시 출발지 및 도착지 반경 200m 구간 좌표를 자동으로 잘라내고 큰길부터 공개되도록 마스킹 처리한다.
@@ -320,7 +320,7 @@
 * **배경 & 차별화**:
   - React Native (Expo) 기반 EAS Build로 테스터용 APK를 단 1회 배포하고, 모든 로직/UI 수정은 GitHub Actions 연동 **EAS Update (`expo-updates`) 무선 OTA**로 실시간 배포.
   - 5인 이상 견주(소형견, 대형견, 노령견 등) 대상 실제 현장 테스트 및 정량적 가중치 튜닝.
-* **우선순위**: Must | **난이도**: 상 | **Story Points**: 5 pt | **담당**: 전원 (Lead: Member E)
+* **우선순위**: Must | **난이도**: 상 | **Story Points**: 5 pt | **담당**: 전원 (Lead: Member E, D)
 * **인수 조건 (Acceptance Criteria)**:
   1. EAS Build로 테스터용 Android APK를 1회 패키징하여 배포한다.
   2. 이후 코드 수정 및 핫픽스는 `eas update` 명령어로 무선 배포되어 테스터의 앱 실행 시 무점검 자동 반영된다.
