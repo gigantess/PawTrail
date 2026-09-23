@@ -61,7 +61,7 @@ graph LR
 | 최종 미션(00) 필수 기술/평가 항목 | 기획 및 기능 명세 (01) | 관련 사용자 스토리 (03) | 아키텍처 및 구현 모듈 (04) | 작업 분할 및 검증 (06) |
 |---|---|---|---|---|
 | **1. AI Agent 코어** | 자연어 파싱, 목표시간 산출, 다요소 라우팅 | **US-A1, US-A3, US-B4, US-E3** | LangGraph Agent, Pydantic V2 스키마 | TASK-A1-1~4, TASK-B4-1~4 (58h) |
-| **2. Multimodal AI** | 공원 종합안내판 판독 & 현장 턱/장애물 분석 | **US-D1, US-D2** | Gemini 1.5 Flash Vision, `ParkBoardInspector` | TASK-D1-1~4, TASK-D2-1~4 (46h) |
+| **2. Multimodal AI** | 공원 종합안내판 판독 & 현장 턱/장애물 분석 | **US-D1, US-D2** | Gemini Fallback Chain (3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash), `ParkBoardInspector` | TASK-D1-1~4, TASK-D2-1~4 (46h) |
 | **3. 도메인 특화 GIS/환경** | 계단 회피, 완만 경사 우선, 그늘길 안내 | **US-B1, US-B2, US-B3** | OSM Steps 필터, DEM 경사도, 태양 위치 추정 | TASK-B1-1~4, TASK-B2-1~4, TASK-B3-1~4 (80h) |
 | **4. 모바일 클라이언트 & UX** | 시선 해방 핸즈프리 음성 안내, EAS 배포 | **US-C1, US-C2, US-E1, US-H1** | React Native Expo, Foreground Service, expo-speech | TASK-C1-1~4, TASK-C2-1~4, TASK-E1-1~4 (72h) |
 | **5. 프라이버시 & 데이터** | Local-First 자택/궤적 보호, 200m 마스킹 | **US-A2, US-G2** | AsyncStorage, Supabase Cloud Auth/Courses | TASK-A2-1~4, TASK-G2-1~4 (30h) |

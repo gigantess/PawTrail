@@ -2,9 +2,9 @@
 
 최신 생명주기 명세서(docs/03, docs/04, docs/06) 기준:
 - [US-D1] Vision AI 기반 현장 턱·계단·보행 장애물 시각 분석:
-  - Gemini 1.5 Flash Vision 기반 2대 축:
-    1) 현장 장애물 진단: 높은 턱, 야외 계단, 공사 장애물 Pydantic V2 Structured JSON
-    2) 공원 종합안내판 판독(ParkBoardInspector): 흙길/잔디 산책로 범례 및 반려견 출입 금지 구역 파싱
+  - Gemini 1.5 사용 불가에 따른 후보 모델 우선순위 체인(Gemini 3.5 Flash-Lite -> 3.1 Flash-Lite -> 3.6 Flash) 기반 순차 자동 선택(Cascading Fallback)
+  - 1) 현장 장애물 진단: 높은 턱, 야외 계단, 공사 장애물 Pydantic V2 Structured JSON
+  - 2) 공원 종합안내판 판독(ParkBoardInspector): 흙길/잔디 산책로 범례 및 반려견 출입 금지 구역 파싱
   - 위험도(warning, danger) 및 권장 조치(reroute, proceed_with_caution) 판별
 - [US-D2] 현장 위험 구간 우회 및 동적 재탐색:
   - 위험물 감지 시 해당 링크 비용 10배 페널티 부여 또는 통행 차단
@@ -213,4 +213,163 @@ class TestHazardInspectionAndRerouting:
         assert result["safe_links_count"] == 2
         assert result["latency_seconds"] <= 3.0
         assert "전방 장애물을 피해 안전한 우회로를 탐색했습니다" in result["reroute_voice_alert"]
+
+
+# ==========================================
+# Gemini 후보 모델 자동 선택 및 Cascading Fallback 엔진 (US-D1)
+# ==========================================
+
+DEFAULT_GEMINI_CANDIDATES = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+]
+
+BLOCKED_GEMINI_MODELS = [
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-1.0-pro",
+]
+
+
+class DeprecatedModelError(ValueError):
+    """더 이상 지원되지 않는 구형 Gemini 1.5 모델 요청 시 발생하는 예외."""
+    pass
+
+
+class NoAvailableGeminiModelError(RuntimeError):
+    """가용한 Gemini 후보 모델이 없을 때 발생하는 예외."""
+    pass
+
+
+class ModelSelectionResult(BaseModel):
+    selected_model: str
+    tried_candidates: List[str]
+    fallback_count: int
+    reason: str
+
+
+class GeminiModelSelector:
+    """Gemini 1.5 배제 및 3.5 Flash-Lite -> 3.1 Flash-Lite -> 3.6 Flash 순차 선택기."""
+
+    def __init__(self, candidates: Optional[List[str]] = None):
+        raw_candidates = candidates if candidates is not None else DEFAULT_GEMINI_CANDIDATES
+        normalized = []
+        for model in raw_candidates:
+            norm = self.normalize_model_name(model)
+            if norm not in normalized:
+                normalized.append(norm)
+        self.candidates = normalized
+
+    @staticmethod
+    def normalize_model_name(model_name: str) -> str:
+        return model_name.strip().lower().replace(" ", "-")
+
+    def select_model(
+        self,
+        available_pool: Optional[List[str]] = None,
+        health_check_fn: Optional[Any] = None
+    ) -> ModelSelectionResult:
+        """가용한 모델을 순서대로 앞에서부터 검사하여 첫 번째 가용 모델 선택."""
+        available_set = {self.normalize_model_name(m) for m in available_pool} if available_pool is not None else None
+
+        tried = []
+        for idx, candidate in enumerate(self.candidates):
+            if any(candidate.startswith(blocked) or blocked in candidate for blocked in BLOCKED_GEMINI_MODELS):
+                raise DeprecatedModelError(f"Gemini 1.5 계열 모델('{candidate}')은 더 이상 사용할 수 없습니다.")
+
+            tried.append(candidate)
+
+            is_available = True
+            if available_set is not None:
+                is_available = candidate in available_set
+
+            if is_available and health_check_fn is not None:
+                try:
+                    is_available = bool(health_check_fn(candidate))
+                except Exception:
+                    is_available = False
+
+            if is_available:
+                return ModelSelectionResult(
+                    selected_model=candidate,
+                    tried_candidates=tried,
+                    fallback_count=idx,
+                    reason=f"후보 {idx+1}순위 모델 가용 확인 완료"
+                )
+
+        raise NoAvailableGeminiModelError(
+            f"가용한 Gemini 모델이 없습니다. 시도한 후보: {tried}"
+        )
+
+
+class TestGeminiModelSelector:
+    """Gemini 후보 모델 체인(3.5 Flash-Lite -> 3.1 Flash-Lite -> 3.6 Flash) 및 Fallback 테스트."""
+
+    def test_default_candidates_priority_order(self):
+        """기본 후보 모델이 3.5 Flash-Lite -> 3.1 Flash-Lite -> 3.6 Flash 순서인지 검증."""
+        selector = GeminiModelSelector()
+        assert selector.candidates == [
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-3.6-flash",
+        ]
+
+    def test_select_first_available_model_without_fallback(self):
+        """1순위 모델(gemini-3.5-flash-lite)이 가용할 때 즉시 선택되는지 검증."""
+        selector = GeminiModelSelector()
+        result = selector.select_model(available_pool=["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"])
+        assert result.selected_model == "gemini-3.5-flash-lite"
+        assert result.fallback_count == 0
+        assert result.tried_candidates == ["gemini-3.5-flash-lite"]
+
+    def test_cascading_fallback_to_second_model(self):
+        """1순위 불가 시 2순위(gemini-3.1-flash-lite)로 순차 폴백되는지 검증."""
+        selector = GeminiModelSelector()
+        result = selector.select_model(available_pool=["gemini-3.1-flash-lite", "gemini-3.6-flash"])
+        assert result.selected_model == "gemini-3.1-flash-lite"
+        assert result.fallback_count == 1
+        assert result.tried_candidates == ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
+
+    def test_cascading_fallback_to_third_model(self):
+        """1순위 및 2순위 불가 시 3순위(gemini-3.6-flash)로 순차 폴백되는지 검증."""
+        selector = GeminiModelSelector()
+        result = selector.select_model(available_pool=["gemini-3.6-flash"])
+        assert result.selected_model == "gemini-3.6-flash"
+        assert result.fallback_count == 2
+        assert result.tried_candidates == ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.6-flash"]
+
+    def test_gemini_1_5_model_raises_deprecated_error(self):
+        """Gemini 1.5 계열 모델을 후보로 지정 시 DeprecatedModelError가 발생하는지 검증."""
+        selector = GeminiModelSelector(candidates=["gemini-1.5-flash", "gemini-3.1-flash-lite"])
+        with pytest.raises(DeprecatedModelError) as exc_info:
+            selector.select_model()
+        assert "Gemini 1.5 계열 모델('gemini-1.5-flash')은 더 이상 사용할 수 없습니다" in str(exc_info.value)
+
+    def test_no_available_models_raises_clear_error(self):
+        """모든 후보 모델이 비가용 상태일 때 NoAvailableGeminiModelError 발생 검증."""
+        selector = GeminiModelSelector()
+        with pytest.raises(NoAvailableGeminiModelError) as exc_info:
+            selector.select_model(available_pool=["unsupported-other-model"])
+        assert "가용한 Gemini 모델이 없습니다" in str(exc_info.value)
+
+    def test_user_input_candidates_deduplication_and_normalization(self):
+        """대소문자/공백이 혼합된 후보 리스트 및 중복 입력 시 순서 보존 정규화 검증."""
+        user_raw = [
+            "Gemini 3.5 Flash-Lite",
+            "Gemini 3.5 Flash-Lite",
+            "Gemini 3.1 Flash-lte",
+            "Gemini 3.5 Flash-Lite",
+            "Gemini 3.6 Flash"
+        ]
+        selector = GeminiModelSelector(candidates=user_raw)
+        assert selector.candidates == [
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lte",
+            "gemini-3.6-flash",
+        ]
+        result = selector.select_model(available_pool=["gemini-3.1-flash-lte"])
+        assert result.selected_model == "gemini-3.1-flash-lte"
+        assert result.fallback_count == 1
+
 

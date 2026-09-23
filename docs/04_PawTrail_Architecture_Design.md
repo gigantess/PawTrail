@@ -64,7 +64,7 @@ flowchart TB
         Tool_Slope[DEM Elevation & Slope Analyzer]
         Tool_Shade[Solar & Building Shade Estimator]
         Tool_Scorer[Candidate Route Scorer]
-        Tool_Vision[Vision Hazard Inspector<br/>Gemini 1.5 Flash]
+        Tool_Vision[Vision Hazard Inspector<br/>Gemini Fallback Chain<br/>(3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash)]
         Tool_Weather[Weather & Heat Risk Tool]
         Tool_Parking[Public Parking API Tool]
     end

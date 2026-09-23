@@ -62,9 +62,9 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 
 | 기능 | 아이콘 | 핵심 설명 | 담당 기술 |
 |---|:---:|---|---|
-| **자연어 산책 플래너** | 🤖 | "관절 안심 케어가 필요한 포메인데 30분 정도 폭신한 길로 걷고 싶어" 발화 시 AI가 최적 루프 코스 생성 | LangGraph ReAct, Gemini 2.5 Flash |
+| **자연어 산책 플래너** | 🤖 | "관절 안심 케어가 필요한 포메인데 30분 정도 폭신한 길로 걷고 싶어" 발화 시 AI가 최적 루프 코스 생성 | LangGraph ReAct, Gemini Fallback Chain |
 | **선호 노면 맞춤 라우팅** | 🗺️ | 흙/잔디길 가중치 대폭 할인(0.45), 아스팔트/자갈길 회피(2.5~3.5), 환경부 피복도 공간 결합 순환로 도출 | GeoPandas Spatial Join, OSRM/ORS |
-| **공원 안내판 비전 판독** | 📸 | 공원 입구 종합안내판 사진 파싱으로 반려견 출입금지구역 자동 회피 및 흙길 경로 보정 | Gemini Flash Vision (`ParkBoardInspector`) |
+| **공원 안내판 비전 판독** | 📸 | 공원 입구 종합안내판 사진 파싱으로 반려견 출입금지구역 자동 회피 및 흙길 경로 보정 | Gemini Fallback Chain (3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash) |
 | **핸즈프리 음성 길 안내** | 🎧 | 주머니 속 다크 포켓 모드에서도 회전 30m 전 및 흙길 진입을 끊김 없이 백그라운드 음성 브리핑 | React Native, `expo-location`, `expo-speech` |
 | **기상청 연동 지면열 알림** | ☀️ | 일사량/기온 기반 지면열 수지식 계산으로 35℃ 이하 일일 최적 안심 산책 골든타임 알림 | n8n 노코드 자동화 파이프라인, 기상청 API |
 | **안심 코스 피드 & 체크인** | 🐾 | 완주 후 선호 노면 달성률 리포트, 집 주소 지오해시 블러링 마스킹 후 이웃 견주와 코스 공유 | Supabase (PostgreSQL), Geo-Masking |
@@ -170,7 +170,7 @@ flowchart TD
 
     subgraph Data_Infra ["Data & External Cloud Services"]
         DB[("Supabase (PostgreSQL)<br/>반려견 프로필, 산책 이력, 즐겨찾기, 캐시")]
-        Gemini["Google Gemini 1.5 / 2.5 Flash"]
+        Gemini["Google Gemini Fallback Chain<br/>(3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash)"]
         OSM["OpenStreetMap / OSRM Routing Engine"]
         n8n["n8n 기상청 지면열 자동 알림 스케줄러"]
     end
@@ -200,7 +200,7 @@ flowchart TD
 | 팀원 | 핵심 역할 | 주 업무 영역 및 기술 스택 | 담당 사용자 스토리 | 공수 |
 |:---:|---|---|---|:---:|
 | **Member A** | **PM & AI Agent Lead** | • 프로젝트 총괄 및 스프린트 일정 관리<br/>• LangGraph 기반 ReAct 에이전트 오케스트레이션 및 다요소 라우팅 스코어링 결합 | **US-A1, US-A3, US-B4, US-D2, US-E3** | 65 h (17.5%) |
-| **Member B** | **AI & Spatial Data Engineer** | • Gemini Flash 비전 멀티모달 에이전트(`ParkBoardInspector`, `HazardInspector`)<br/>• GIS 데이터 파이프라인(DEM 경사도, 태양 위치 그늘 모델링, OSM 계단 필터링) | **US-B1, US-B2, US-B3, US-D1, US-D2, US-F1, US-G1, US-G2** | 71 h (19.1%) |
+| **Member B** | **AI & Spatial Data Engineer** | • Gemini 가용 모델 순차 선택(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 비전 분석<br/>• GIS 데이터 파이프라인(DEM 경사도, 태양 위치 그늘 모델링, OSM 계단 필터링) | **US-B1, US-B2, US-B3, US-D1, US-D2, US-F1, US-G1, US-G2** | 71 h (19.1%) |
 | **Member C** | **Backend & Spatial Routing Lead** | • FastAPI 백엔드 구축 및 REST API 계약 구현<br/>• NetworkX 가중치 보행 네트워크 라우팅 엔진, 위험 우회 재탐색 및 캐싱 | **US-B1, US-B2, US-B3, US-B4, US-D2, US-F1, US-G1, US-G2** | 91 h (24.5%) |
 | **Member D** | **Frontend & Mobile App Lead** | • React Native Expo 기반 모바일 클라이언트 앱 코어 구현<br/>• 시선 해방 백그라운드 핸즈프리 음성 안내(Foreground Service + TTS) 및 위치 추적 | **US-A2, US-C1, US-C2, US-D2, US-E1, US-E2, US-E3, US-H1** | 94 h (25.3%) |
 | **Member E** | **UI/UX Designer & Product Experience Lead** | • 디자인 시스템 구축 및 18개 스토리 UI/UX 디자인 에셋 고도화<br/>• EAS Build/Update 무선 배포 및 5인 실사용자 CBT 총괄, 사용자 경험 개선 | **US-A2, US-A3, US-C1, US-E2, US-F1, US-G1, US-G2, US-H1** | 51 h (13.7%) |
@@ -296,7 +296,7 @@ python -m pytest test_case/ -v
 - [x] 6대 핵심 시나리오 UI 화면 목업 및 인터랙티브 웹 뷰어 완비
 
 #### 🚀 향후 구현 및 배포 시 충족할 항목 (Production DoD)
-- [ ] 실제 FastAPI 백엔드 구축 및 외부 서비스(OSRM, Gemini 2.5 Flash, Supabase) 실연동
+- [ ] 실제 FastAPI 백엔드 구축 및 외부 서비스(OSRM, Gemini 가용 모델 체인, Supabase) 실연동
 - [ ] React Native Expo 앱 구축 및 Android Foreground Service 백그라운드 음성 길 안내 구현
 - [ ] 앱 UI 및 음성 스크립트 내 질병 용어 100% 배제 및 긍정적 웰니스 언어 준수
 - [ ] 개인정보 보호(출발지/거주지 좌표 100m 지터링 마스킹) 적용

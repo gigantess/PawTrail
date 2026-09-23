@@ -52,7 +52,7 @@
    - 전문 Routing API(OpenRouteService, OSRM 등)와 연동하여 실제 도로망 기반 복수 후보 경로를 수집.
    - OSM `highway=steps` 링크를 우선 배제하고 DEM 경사도 및 그늘 지표를 종합 채점하여 최적 경로 결정.
 4. **Multimodal Vision Inspector**:
-   - Gemini 1.5 Flash 기반으로 현장 사진의 시각적 위험 요소를 진단(높은 턱, 야외 계단, 공사 자재 등).
+   - Gemini 1.5 사용 불가에 따른 후보 체인(Gemini 3.5 Flash-Lite ➔ Gemini 3.1 Flash-Lite ➔ Gemini 3.6 Flash) 기반 가용 모델 자동 순차 선택(Cascading Fallback)으로 현장 위험 요소(높은 턱, 야외 계단, 공사 자재 등) 진단.
 5. **Local-First Data & Simple Email Auth**:
    - **사용자 폰(AsyncStorage)**: 반려견 정보, 개인 산책 메모, 자택 출발지 좌표를 영구 보관하여 프라이버시 원천 보호.
    - **Supabase Cloud**: 소셜 OAuth 없이 **간단한 이메일/비밀번호 가입**만 지원하며, 커뮤니티 공개 코스(출발지 200m 마스킹) 및 현장 위험 제보만 중앙 관리.
@@ -90,7 +90,7 @@
    - 전문 Routing API(OpenRouteService, OSRM 등)와 연동하여 실제 도로망 기반 복수 순환 후보 경로를 수집.
    - OSM `highway=steps` 링크를 우선 배제하고 DEM 경사도 및 그늘 지표를 종합 채점하여 최적 경로 결정.
 4. **Multimodal Vision Inspector (현장 위험물 & 공원 안내판)**:
-   - Gemini 1.5 Flash 기반으로 2가지 핵심 시각 분석 수행:
+   - Gemini 가용 모델 우선순위 선택 파이프라인(Gemini 3.5 Flash-Lite ➔ Gemini 3.1 Flash-Lite ➔ Gemini 3.6 Flash) 기반으로 2가지 핵심 시각 분석 수행:
      1. **공원 종합안내판 판독 (`ParkBoardInspector`)**: 공원 입구 오프라인 안내판 사진에서 흙길/잔디마당 산책로 범례와 반려견 출입 금지 구역을 파싱하여 구조화된 JSON(`ParkBoardInspectionResult`) 반환.
      2. **현장 위험물 진단 및 커뮤니티 제보 검증 (`Hazard & Surface Enricher`)**: 높은 턱, 야외 계단, 공사 자재 및 완주 후 견주의 현장 노면 사진을 시각 진단하여 안전 우회 경로 유도 및 지도 속성 보강.
 5. **Local-First Data & Simple Email Auth**:
@@ -144,8 +144,8 @@ $$\text{Cost}(e, t) = \text{Length}(e) \times F_{\text{steps}}(e) \times F_{\tex
 | **핸즈프리 보행** | **시선 해방(Eyes-Free) 백그라운드 음성 안내** | 스마트폰을 주머니에 넣고 화면을 끈 채 OSRM 안내 스텝 및 노면 회전("50m 앞 완만한 길입니다. 우회전하세요")을 폰 스피커/이어폰으로 실시간 음성 송출 | React Native (Expo Background GPS & Speech TTS) |
 | **환경 최적화** | **시간대별 그늘 우선 코스 추천** | 출발 시각의 태양 위치와 건물 차폐 데이터를 연산하여 직사광선을 최소화하는 그늘길 안내 | Solar & Shadow Estimator |
 | **스케줄 자동화**| **기상 연동 지면열 안심 알림** | 기상청 기온/일사량 추정 수지식 기반 35℃ 이하 안전 산책 골든타임 알림 (n8n 연동) | n8n Automation + Open Weather API |
-| **사전 비전 분석**| **공원 종합안내판 비전 판독 (`ParkBoardInspector`)** | 공원 입구 오프라인 안내판 사진 업로드 시 흙길/잔디마당 및 반려견 출입 금지 구역 사전 시각 판독 | Gemini 1.5 Flash Vision |
-| **현장 위험 분석**| **Vision 기반 턱/장애물 분석 및 커뮤니티 제보** | 보행 중 맞닥뜨린 높은 턱, 공사 구간 사진 업로드 시 위험도 판독 및 안전 우회 안내 | Gemini 1.5 Flash Vision + Supabase |
+| **사전 비전 분석**| **공원 종합안내판 비전 판독 (`ParkBoardInspector`)** | 공원 입구 오프라인 안내판 사진 업로드 시 흙길/잔디마당 및 반려견 출입 금지 구역 사전 시각 판독 | Gemini Fallback Chain (3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash) |
+| **현장 위험 분석**| **Vision 기반 턱/장애물 분석 및 커뮤니티 제보** | 보행 중 맞닥뜨린 높은 턱, 공사 구간 사진 업로드 시 위험도 판독 및 안전 우회 안내 | Gemini Fallback Chain + Supabase |
 | **안심 거점 연계**| **주차장 P&R(Park & Walk) 코스 추천** | 차량 이동 견주를 위해 인근 공영주차장 정보를 실시간 연동해 주차 후 바로 산책하는 코스 추천 | Public Data API Tool |
 | **프라이버시 보관함**| **개인화 데이터 로컬 저장 & 나만의 코스 즐겨찾기** | 반려견 프로필, 개인 산책 이력, 즐겨찾기 코스를 폰 로컬에만 저장하고 JSON 파일로 안전하게 백업/복원 | AsyncStorage + FileSystem |
 | **커뮤니티 공유** | **안심 코스 공유 및 출발지 마스킹** | 완주한 멋진 코스를 이웃 견주에게 공유하되 출발지 200m는 자동 블러링 처리 | Supabase PostgreSQL + Spatial Jittering |

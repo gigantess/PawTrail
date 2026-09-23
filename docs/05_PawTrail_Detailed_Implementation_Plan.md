@@ -16,7 +16,7 @@
     - Pydantic V2 Strict Tool-calling 규격 수립, 체급별 표준 보행 속도 모델 및 목표 시간 수렴도(±15%) 튜닝 (US-A3).
     - Candidate Route Scorer 다요소 랭킹 수치 알고리즘 구현 및 추천 사유/우회 안내 음성 브리핑 체인 연동 (US-B4, US-D2).
   * **Member B (AI & Spatial Data Engineer / 71h)**:
-    - Gemini 1.5 Flash 기반 현장 위험물(높은 턱, 계단, 공사) 판독 및 공원 종합안내판 비전 판독 파이프라인 개발 (US-D1, US-D2).
+    - Gemini 가용 모델 순차 선택(Gemini 3.5 Flash-Lite ➔ Gemini 3.1 Flash-Lite ➔ Gemini 3.6 Flash) 기반 현장 위험물(높은 턱, 계단, 공사) 판독 및 공원 종합안내판 비전 판독 파이프라인 개발 (US-D1, US-D2).
     - DEM 고도 래스터 적재 및 경로 세그먼트 고도 샘플링 파이프라인 구축 (US-B2).
     - `SunCalc` 실시간 태양 고도각/방위각 연산 모듈 및 계단/경사/그늘 테스트베드 정량 검증 (US-B1, US-B2, US-B3).
     - 기상청 단기예보 n8n 연동 및 지면열 위험 지수 산출 수지식 모듈 구현 (US-F1).

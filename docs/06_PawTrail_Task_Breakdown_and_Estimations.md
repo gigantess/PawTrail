@@ -26,7 +26,7 @@
 | 담당자 | 포지션 (Position) | 핵심 R&R 및 전담 개발 영역 | 총 배정 공수 |
 |:---:|---|---|:---:|
 | **Member A** | **PM & AI Agent Lead** | LangGraph Agent 상태 머신, Pydantic V2 Strict Schema, 무상태 프롬프트 오케스트레이션, 체급별 속도 모델, Candidate Route Scorer 랭킹 알고리즘 | **65 h** |
-| **Member B** | **AI & Spatial Data Engineer** | Gemini 1.5 Flash Vision 현장 장애물/공원안내판 분석, DEM 고도 샘플링 파이프라인, SunCalc 태양 궤적 연산, n8n 기상청 예보/지면열 수지식, 200m 마스킹 | **71 h** |
+| **Member B** | **AI & Spatial Data Engineer** | Gemini 가용 모델 순차 선택(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 비전 분석, DEM 고도 샘플링 파이프라인, SunCalc 태양 궤적 연산, n8n 지면열 수지식, 200m 마스킹 | **71 h** |
 | **Member C** | **Backend & Spatial Routing Lead** | FastAPI REST API 코어, Routing API Adapter (ORS/OSRM), OSM Steps 배제 라우팅, 건물 외곽선 그림자 투영 다각형 연산, 동적 위험 우회 재탐색 API, Supabase Auth | **91 h** |
 | **Member D** | **Frontend & Mobile App Lead** | React Native (Expo SDK 51+) 코어, react-native-maps Polyline 렌더링, Android Foreground Service GPS, expo-speech TTS 음성 안내, AsyncStorage, EAS Build/OTA | **94 h** |
 | **Member E** | **UI/UX Designer & Product Experience Lead** | **전문 디자이너**: PawTrail 디자인 시스템, 6대 화면 고화질 UI/UX 설계, 온보딩/플래너 인터랙션, 완주 인포그래픽, 웰니스 카피라이팅, 5인 CBT 사용성 평가 총괄 | **51 h** |
@@ -180,20 +180,20 @@
 ---
 
 ### [Epic D] 현장 위험 분석 및 재탐색
-* **에픽 요약**: 현장에서 촬영한 사진 속 장애물(높은 턱, 계단, 공사 잔해)을 Gemini 1.5 Flash Vision이 실시간 판독하고, 위험 감지 시 즉시 안전 우회 경로를 재탐색.
+* **에픽 요약**: 현장에서 촬영한 사진 속 장애물(높은 턱, 계단, 공사 잔해)을 Gemini 가용 모델(3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash)이 실시간 판독하고, 위험 감지 시 즉시 안전 우회 경로를 재탐색.
 * **에픽 규모**: **10 Story Points | 8개 세부 Task | 총 46 Hours**
 
 ---
 
 #### US-D1: Vision AI 기반 현장 턱·계단·보행 장애물 시각 분석
-* **개요**: 현장 사진을 Gemini 1.5 Flash로 분석하여 높은 턱, 공사 구역, 공원 안내판 출입 제한을 정형 JSON으로 구조화 판독.
+* **개요**: 현장 사진을 가용한 Gemini 모델(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash)로 분석하여 높은 턱, 공사 구역, 공원 안내판 출입 제한을 정형 JSON으로 구조화 판독.
 * **스토리 정보**: `난이도: 중상` | `우선순위: Must` | `스토리 포인트: 5 pt` | `총 추정 공수: 24 h` | `스프린트: Sprint 2 (Week 3)`
 * **담당자**: **Member B (Vision AI Lead)**
 
 | Task ID | 세부 작업 내용 (Task Specification) | 담당자 | 공수 | 주차 | 완료 정의 및 산출물 (DoD / Deliverables) |
 |:---:|---|:---:|:---:|:---:|---|
 | **TASK-D1-1** | 현장 위험물(높은 턱, 계단, 공사) 및 공원 안내판 벤치마킹 이미지셋 구축 및 라벨링 | Member B | 6 h | Week 3 | 35장 이상의 도심/공원 보행 장애물 이미지 데이터셋 구축 |
-| **TASK-D1-2** | Gemini 1.5 Flash Vision 프롬프트 엔지니어링 및 Structured JSON 스키마 고정 | Member B | 7 h | Week 3 | `has_hazard`, `hazard_type`, `confidence` 정형 출력 스키마 고정 |
+| **TASK-D1-2** | Gemini 가용 모델 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 프롬프트 엔지니어링 및 Structured JSON 스키마 고정 | Member B | 7 h | Week 3 | `has_hazard`, `hazard_type`, `confidence` 정형 출력 스키마 고정 |
 | **TASK-D1-3** | 모션 블러, 저조도 사진 입력 시 예외 처리 및 사용자 재촬영 가이드 로직 구현 | Member B | 5 h | Week 3 | 저품질 이미지 입력 시 폴백 및 사용자 친화적 촬영 가이드 반환 |
 | **TASK-D1-4** | 이미지 업로드 REST API(`POST /api/walks/inspect-board`) 연동 및 지연시간 최적화 | Member B | 6 h | Week 3 | 이미지 리사이징(1024px) 파이프라인 및 응답 시간 2.5초 이내 달성 |
 
@@ -381,7 +381,7 @@
 |:---:|:---:|---|:---:|---|
 | **Sprint 1** | **Week 1** | Expo 프로젝트 초기화, 디자인 시스템, LangGraph 스키마 수립, Routing 어댑터 | **70 h** | `AgentState`, 디자인 토큰, ORS/OSRM Adapter |
 | **Sprint 1** | **Week 2** | `AsyncStorage` 프로필 완성, OSM Steps 배제, DEM 경사도 연산, Scorer, UI 목업 | **96 h** | 무계단 라우팅, 경사도 비용 함수, 다요소 채점기, 고화질 목업 |
-| **Sprint 2** | **Week 3** | SunCalc 그늘 분석, Gemini 1.5 Flash 비전 판독, react-native-maps & expo-speech 음성 길 안내 | **104 h** | 그늘 다각형 교차, 비전 검사기, 백그라운드 TTS, 바텀시트 UI |
+| **Sprint 2** | **Week 3** | SunCalc 그늘 분석, Gemini 비전 모델 선택 체인, react-native-maps & expo-speech 음성 길 안내 | **104 h** | 그늘 다각형 교차, 비전 검사기, 백그라운드 TTS, 바텀시트 UI |
 | **Sprint 2** | **Week 4** | Android Foreground Service GPS, 주차장 연동, 200m 마스킹 커뮤니티, EAS Build APK 패키징 | **78 h** | Foreground 추적기, 공간 지터링, 테스터 APK, 피드백 UI |
 | **Hardening** | **Week 5** | 5인 CBT 사용성 평가 분석, EAS Update 무선 OTA 핫픽스 배포, 최종 디자인 튜닝 | **24 h** | CBT 종합 평가서, 무선 OTA 실시간 반영, 최종 릴리즈 |
 | **전체 합계** | **총 5주** | **18개 사용자 스토리 및 68개 Task 완주** | **372 h** | **PawTrail 정식 출시 버전 (DoD 100% 달성)** |
@@ -451,7 +451,7 @@
 | **TASK-B3-1** | US-B3 | `SunCalc` 연동 산책 일시/위치 기준 실시간 태양 고도각 및 방위각 연산 모듈 개발 | 5 h | Week 2 |
 | **TASK-B3-4** | US-B3 | 정오 vs 늦은 오후 시간대별 그늘 평가 대조 테스트베드 검증 및 신뢰도 태깅 | 4 h | Week 3 |
 | **TASK-D1-1** | US-D1 | 현장 위험물(높은 턱, 계단, 공사) 및 공원 안내판 벤치마킹 이미지셋 구축 및 라벨링 | 6 h | Week 3 |
-| **TASK-D1-2** | US-D1 | Gemini 1.5 Flash Vision 프롬프트 엔지니어링 및 Structured JSON 스키마 고정 | 7 h | Week 3 |
+| **TASK-D1-2** | US-D1 | Gemini 가용 모델 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 프롬프트 엔지니어링 및 Structured JSON 스키마 고정 | 7 h | Week 3 |
 | **TASK-D1-3** | US-D1 | 모션 블러, 저조도 사진 입력 시 예외 처리 및 사용자 재촬영 가이드 로직 구현 | 5 h | Week 3 |
 | **TASK-D1-4** | US-D1 | 이미지 업로드 REST API(`POST /api/walks/inspect-board`) 연동 및 지연시간 최적화 | 6 h | Week 3 |
 | **TASK-D2-1** | US-D2 | Vision 판독 위험 신뢰도(Confidence >= 0.85) 필터링 및 우회 트리거 이벤트 연동 | 4 h | Week 3 |

@@ -10,7 +10,7 @@
 * **기술 스택 & 아키텍처 원칙**:
   - **Client**: React Native (Expo SDK 51+), `expo-location` + Android Foreground Service (백그라운드 위치 추적), `expo-speech` (TTS 음성 안내).
   - **Deploy**: EAS Build (단 1회 APK 배포) + EAS Update (`expo-updates` 무선 무점검 OTA 실시간 핫픽스).
-  - **Backend & AI**: FastAPI, Python 3.11, LangGraph ReAct Agent, Gemini 1.5 Flash Vision, Pydantic V2 Strict Schema.
+  - **Backend & AI**: FastAPI, Python 3.11, LangGraph ReAct Agent, Gemini 후보 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) Cascading Fallback, Pydantic V2 Strict Schema.
   - **GIS & Routing**: OpenRouteService (ORS) / OSRM Routing Adapter, OpenStreetMap(OSM), DEM(Digital Elevation Model) 경사도, SunCalc 태양/그늘 계산.
   - **Persistence (Local-First)**: 민감정보(자택 좌표, 보행 GPS 궤적, 반려견 프로필)는 모바일 `AsyncStorage` 로컬 보관, 커뮤니티 공개 코스(출발지 200m 마스킹) 및 제보만 `Supabase Cloud` 관리.
   - **Wellness Copywriting**: 앱 UI 전역에서 '슬개골 탈구' 등 질병 용어를 배제하고 '관절 안심 케어', '폭신한 길'로 순화.
@@ -192,12 +192,12 @@
 * **사용자 스토리**:  
   *산책 중이거나 공원 입구에 선 견주로서*, 눈앞에 나타난 높은 턱, 공사 구간 또는 공원 종합안내판 사진을 찍어 안전성을 확인하고 싶다. *그리하여* 반려견이 다칠 수 있는 위험을 피하고 공원 내 통행 가능 구역을 사전에 파악하기를 원한다.
 * **배경 & 차별화**:
-  - Gemini 1.5 Flash Vision 기반으로 2가지 핵심 역할 수행:
+  - Gemini 후보 체인(Gemini 3.5 Flash-Lite ➔ Gemini 3.1 Flash-Lite ➔ Gemini 3.6 Flash) 가용 모델 순차 선택 파이프라인 기반으로 2가지 핵심 역할 수행 (Gemini 1.5 계열 원천 배제):
     1) 현장 장애물 진단: 높은 턱, 야외 계단, 공사 자재 시각 판독.
     2) 공원 종합안내판 판독(`ParkBoardInspector`): 흙길/잔디 산책로 범례 및 반려견 출입 금지 구역 JSON 파싱.
 * **우선순위**: Must | **난이도**: 중상 | **Story Points**: 5 pt | **담당**: Member B (Vision AI)
 * **인수 조건 (Acceptance Criteria)**:
-  1. 현장 사진 또는 공원 안내판 사진 업로드 시 Gemini 1.5 Flash가 3초 이내에 분석하여 Pydantic 구조화 JSON 스키마를 반환한다.
+  1. 현장 사진 또는 공원 안내판 사진 업로드 시 가용한 Gemini 모델(3.5 Flash-Lite 우선, 불가 시 3.1 Flash-Lite ➔ 3.6 Flash 순차 폴백)이 3초 이내에 분석하여 Pydantic 구조화 JSON 스키마를 반환한다.
   2. 높은 턱/장애물 판독 시 위험도(`warning`, `danger`)와 함께 권장 조치(우회/주의 통행)를 구조화하여 제공한다.
   3. 공원 안내판 판독 시 반려견 금지 구역을 식별하여 라우팅 제약으로 즉시 연계할 수 있는 형태(`ParkBoardInspectionResult`)로 전달한다.
 * **완료 정의 (DoD)**:
