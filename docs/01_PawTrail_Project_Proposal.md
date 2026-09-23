@@ -14,7 +14,26 @@
   - 관절 안심 케어가 필요하여 계단이나 가파른 언덕을 피해야 하는 소형견·노령견 견주
   - 스마트폰 화면을 보지 않고 두 손으로 안전하게 리드줄을 통제하며 음성 안내로 산책하고 싶은 견주
   - 자택 위치 등 개인정보 유출 걱정 없이 안심 코스를 추천받고 기록하고 싶은 견주
-* **실사용자 테스트 목표**: 반려견 견주 최소 5인 이상 대상 실제 필드 테스트 및 피드�### 3.1 시스템 개념 아키텍처 다이어그램
+* **실사용자 테스트 목표**: 반려견 견주 최소 5인 이상 대상 실제 필드 테스트 및 피드백 반영
+
+---
+
+## 2. 문제 정의 및 AI 기반 해결 방식
+
+| 문제점 (Pain Points) | AI 및 데이터 기반 해결 방식 | 적용 기술 (필수 요건 충족) |
+|---|---|---|
+| **계단 통행으로 인한 관절 부담**<br>(소형견·노령견 관절 취약) | OSM 보행망의 `highway=steps` 속성을 사전에 필터링하여 **지도 데이터상 확인된 계단 구간을 최우선 배제(Hard Constraint)**하는 순환 경로 생성 (대체 경로 부재 시 사유 명시) | **OSM Steps Detector & Routing Adapter** |
+| **과도한 경사로 인한 보행 피로**<br>(가파른 오르막·내리막 부상 위험) | DEM 고도 데이터 및 라우팅 고도 프로파일을 연계하여 **최대 경사도(`max_slope_percent`)를 제어**, 완만한 평지 위주 경로 도출 | **Elevation/DEM Slope Analyzer** |
+| **직사광선 노출 및 열 스트레스**<br>(여름철 복사열 및 탈진 위험) | 산책 일시와 위치 기반 태양 고도/방위각(SunCalc)과 확보 가능한 건물 형상 데이터를 결합하여 **시간대별 예상 그늘 구간을 우선 배정** | **Solar Model & Shade Estimator (Level 1~2)** |
+| **산책 중 폰 화면 주시의 위험성**<br>(리드줄 파지 중 화면 응시 시 낙상/사고) | 화면을 보며 걷는 위험을 원천 차단하기 위해, **주머니 속에서도 OSRM 스텝과 경로 속성을 결합해 회전 및 위험을 알려주는 백그라운드 핸즈프리 음성 안내** 제공 | **React Native Expo (Background GPS & Speech TTS)** |
+| **현장 돌발 장애물 및 시각적 위험**<br>(높은 턱, 공사 구간, 깨진 유리) | 산책 전/중 현장 사진을 **Vision AI가 분석하여 높은 턱·계단·보행 방해 요소를 감지**하고 안전 우회 경로 권장 | **Multimodal Vision Inspector** |
+| **자택 위치 및 개인정보 노출 우려**<br>(프라이버시 침해 우려) | 자택 위치, 보행 궤적, 반려견 프로필을 서버 DB에 모으지 않고 **폰 로컬 스토리지에 격리 보관**. AI 요청 시 일회성 페이로드로 전송하는 무상태(Stateless) 처리 | **Local-First Architecture (AsyncStorage)** |
+
+---
+
+## 3. 시스템 아키텍처 및 핵심 기술 명세
+
+### 3.1 시스템 개념 아키텍처 다이어그램
 ```text
   [ 사용자 입력 (자연어 발화 / 산책 조건 선택 / 현장 사진) ]
                      │
@@ -71,52 +90,6 @@
 6. **자동화 워크플로우 (n8n Webhook Pipeline)**:
    - 매일 오전 기상청 단기예보를 수집하고 경험적 지면열 수지식을 실행:  
      $$\text{Estimated Surface Temp} = \text{Air Temp} + (\text{Insolation Weight} \times 15)$$
-   - 아스팔트 온도가 35℃ 이하로 내려가는 안전 시간대(골든타임)를 산출해 푸시/웹훅 알림 발송.
-�� 좌표를 영구 보관하여 프라이버시 원천 보호.
-   - **Supabase Cloud**: 소셜 OAuth 없이 **간단한 이메일/비밀번호 가입**만 지원하며, 커뮤니티 공개 코스(출발지 200m 마스킹) 및 현장 위험 제보만 중앙 관리.
-        ▼                   ▼                   ▼                   ▼
- [ Routing Adapter ] [ Steps Detector ]  [ Slope Analyzer ]  [ Shade Estimator ]
-  - ORS/OSRM 연동     - OSM Steps 조회    - DEM 고도 데이터    - SunCalc 태양각
-  - Waypoints 생성    - 확인된 계단 배제  - 경사도 프로파일   - 건물 그림자 추정
-        │                   │                   │                   │
-        └───────────────────┴───────────────────┴───────────────────┘
-                                 │
-                                 ▼
-                    [ Candidate Route Scoring ]
-                    (다요소 가중 평가 후 최종 루프 선정)
-                                 │
-                    [ 커뮤니티 공유 / 제보 시에만 ]
-                    (출발지 200m 마스킹 블러링 적용)
-                                 ▼
-  ┌─────────────────────────────────────────────────────────────�
-  │                 ☁️ Supabase Cloud (최소 관리)                 │
-  │  • auth.users (간단한 이메일/비밀번호 계정)                   │
-  │  • community_courses (출발지 200m 마스킹 공개 산책 코스)     │
-  │  • hazard_reports (공사/높은 턱 현장 제보 사진 및 좌표)     │
-  └─────────────────────────────────────────────────────────────┘
-```
-
-### 3.2 핵심 기술 요소 상세 명세
-1. **React Native (Expo) 클라이언트 & 핸즈프리 음성 안내 엔진**:
-   - `expo-location`과 Android Foreground Service 기반 백그라운드 GPS 위치 추적.
-   - `expo-speech` TTS와 OSRM 안내 스텝을 결합하여, 폰을 주머니에 넣은 채 *"50m 앞 완만한 길입니다. 우회전하세요"*, *"높은 턱 주의 구간입니다"* 등 실시간 음성 브리핑 송출.
-   - **EAS Build로 1회 APK 배포** 후 모든 로직과 UI 변경은 **EAS Update (`expo-updates`) 무선 OTA**로 즉시 반영.
-2. **AI Agent (Walk Planning Agent)**:
-   - 클라이언트 로컬에서 전달받은 `DogProfile`과 사용자 발화를 파싱하여 `TargetDuration`, `AvoidStairs`, `SlopePreference`, `ShadePriority`, `PreferredSurfaces` 파라미터 추출.
-   - Pydantic V2 기반 엄격한 스키마 검증을 거쳐 `search_routes`, `inspect_hazard`, `evaluate_candidates`, `search_parking` 도구를 자율 오케스트레이션.
-3. **Routing Adapter & Candidate Scorer**:
-   - 전문 Routing API(OpenRouteService, OSRM 등)와 연동하여 실제 도로망 기반 복수 순환 후보 경로를 수집.
-   - OSM `highway=steps` 링크를 우선 배제하고 DEM 경사도 및 그늘 지표를 종합 채점하여 최적 경로 결정.
-4. **Multimodal Vision Inspector (현장 위험물 & 공원 안내판)**:
-   - Gemini 가용 모델 우선순위 선택 파이프라인(Gemini 3.5 Flash-Lite ➔ Gemini 3.1 Flash-Lite ➔ Gemini 3.6 Flash) 기반으로 2가지 핵심 시각 분석 수행:
-     1. **공원 종합안내판 판독 (`ParkBoardInspector`)**: 공원 입구 오프라인 안내판 사진에서 흙길/잔디마당 산책로 범례와 반려견 출입 금지 구역을 파싱하여 구조화된 JSON(`ParkBoardInspectionResult`) 반환.
-     2. **현장 위험물 진단 및 커뮤니티 제보 검증 (`Hazard & Surface Enricher`)**: 높은 턱, 야외 계단, 공사 자재 및 완주 후 견주의 현장 노면 사진을 시각 진단하여 안전 우회 경로 유도 및 지도 속성 보강.
-5. **Local-First Data & Simple Email Auth**:
-   - **사용자 폰(AsyncStorage)**: 반려견 정보, 개인 산책 메모, 자택 출발지 좌표, 나만의 코스 즐겨찾기를 영구 보관하여 프라이버시 원천 보호.
-   - **Supabase Cloud**: 소셜 OAuth 없이 **간단한 이메일/비밀번호 가입**만 지원하며, 커뮤니티 공개 코스(출발지 200m 마스킹) 및 현장 위험 제보만 중앙 관리.
-6. **자동화 워크플로우 (n8n Webhook Pipeline)**:
-   - 매일 오전 기상청 단기예보를 수집하고 경험적 지면열 수지식을 실행:  
-     $$	ext{Estimated Surface Temp} = 	ext{Air Temp} + (	ext{Insolation Weight} 	imes 15)$$
    - 아스팔트 온도가 35℃ 이하로 내려가는 안전 시간대(골든타임)를 산출해 푸시/웹훅 알림 발송.
 
 ---

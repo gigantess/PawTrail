@@ -76,7 +76,7 @@
 * **주간 목표**: 개발 환경 통일, Expo 프로젝트 초기화, 디자인 시스템 구축, 기본 라우팅 어댑터 연결, Git 협업 룰 확립.
 * **세부 작업**:
   * **Member A**: LangGraph 상태 그래프 스키마(`AgentState`) 정의, 자연어 발화 엔티티 추출 ReAct 프롬프트 초안 작성 및 Pydantic V2 스키마 정의 (US-A1).
-  * **Member B**: 현장 위험물(턱, 계단, 공사) 벤치마킹 이미지 20장 및 공원 종합안내판 이미지 15장 수집/라벨링, Gemini Flash Few-shot 프롬프트 셋업 (US-D1).
+  * **Member B**: 현장 위험물(턱, 계단, 공사) 벤치마킹 이미지 20장 및 공원 종합안내판 이미지 15장 수집/라벨링, Gemini 가용 모델 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) Few-shot 프롬프트 셋업 (US-D1).
   * **Member C**: FastAPI 보일러플레이트 구성, OpenRouteService / OSRM 라우팅 어댑터 독립 레이어 구현 및 순환 루프 기본 후보 생성 (US-B4).
   * **Member D**: React Native Expo SDK 51+ 프로젝트 초기화, `@react-native-async-storage` 로컬 스토리지 래퍼 모듈 개발 (US-A2).
   * **Member E**: PawTrail 디자인 시스템 기초 설계 (Color Tokens, Typography, Iconography), 6대 화면 와이어프레임 설계 및 긍정적 웰니스 카피라이팅 가이드라인 수립 (US-A2).

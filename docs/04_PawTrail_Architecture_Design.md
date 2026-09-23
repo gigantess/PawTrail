@@ -18,7 +18,7 @@
    - 백엔드는 민감 정보를 저장하지 않는 **완전한 무상태(Stateless)** 구조로 운영됩니다.
 4. **독립적이고 간결한 인증 (Simple Email Auth, No Social OAuth)**:
    - 외부 소셜 OAuth 연동 병목을 배제하고, `Supabase Auth` 기반의 **단순 이메일/비밀번호 가입 체계**로 단일화합니다. (개발/CBT 중 Auto-confirm 활성화)
-   - 커뮤니티 코스 공유 시에만 **출발지/도착지 200m 마스킹 블러링**을 적용하여 업로드합니다.
+   - 커뮤니티 코스 공유 시에만 **출발지/도착지 200m 마스킹 블러링(Spatial Jittering)**을 적용하여 업로드합니다.
 5. **AI Agent와 전문 라우팅 도구의 분리**:
    - AI Agent는 조건 구조화와 다요소 채점에 집중하고, 도로망 지오메트리 연산은 전문 **Routing API(ORS/OSRM) Adapter**에 위임합니다.
 6. **질병 용어 배제 및 긍정적 웰니스 UX 원칙 (Wellness Terminology Policy)**:
@@ -48,8 +48,6 @@ flowchart TB
 
     subgraph Gateway["[API Gateway & Backend] FastAPI (Render / Cloud Run)"]
         Router[Stateless REST API Router & CORS]
-        Validator[Pydantic V2 Request Validator]
-    end
         Validator[Pydantic V2 Strict Validator]
     end
 
@@ -60,10 +58,10 @@ flowchart TB
 
     subgraph Tool_Layer["[Agent Tool Layer] @tool"]
         Tool_Routing[Routing API Adapter<br/>ORS / OSRM]
-        Tool_Steps[OSM Steps Detector]
+        Tool_Steps[OSM Steps Detector<br/>Hard Constraint 배제]
         Tool_Slope[DEM Elevation & Slope Analyzer]
         Tool_Shade[Solar & Building Shade Estimator]
-        Tool_Scorer[Candidate Route Scorer]
+        Tool_Scorer[Candidate Route Scorer<br/>100점 만점 랭킹]
         Tool_Vision[Vision Hazard Inspector<br/>Gemini Fallback Chain<br/>(3.5 Flash-Lite / 3.1 Flash-Lite / 3.6 Flash)]
         Tool_Weather[Weather & Heat Risk Tool]
         Tool_Parking[Public Parking API Tool]
@@ -75,9 +73,9 @@ flowchart TB
         Hazards[(hazard_reports<br/>현장 턱/공사 제보 좌표 및 사진)]
         Storage[(Supabase Storage - 위험 사진 버킷)]
     end
+
     subgraph Automation["[스케줄 자동화 Tier]"]
         n8n[n8n Workflow<br/>(기상청 지면열 골든타임 알림)]
-    end
     end
 
     subgraph External["[External Services & APIs]"]
@@ -86,32 +84,24 @@ flowchart TB
         DEM_DATA[DEM Elevation Data]
         BUILDING_DATA[공공 건물 공간정보]
         KMA_API[기상청 단기예보 API]
+        PARKING_API[전국 공영주차장 API]
         EAS_CLOUD[Expo EAS Update CDN]
     end
 
-    %% 연결 흐름
+    %% 클라이언트 내부 및 게이트웨이 연결
     UI --> Router
     MapModule <--> Router
     NaviEngine <--> MapModule
     CameraModule --> Router
     EASModule <--> EAS_CLOUD
-
     LocalStore -.->|산책 요청 시 일회성 페이로드 동봉| UI
-    Router --> Validator --> Agent
-    Router --> Tool_Vision
-    Agent --> Tool_Routing
-    Agent --> Tool_DEM
-    Agent --> Tool_Sun
-    Agent --> Tool_Parking
-    Tool_Vision --> VisionAI
-    Tool_Routing --> OSRM
-    Tool_DEM --> GeoData
-    Tool_Sun --> SunCalc
-    Tool_Parking --> PublicAPI
-    Courses -.-> UI
-    Hazards -.-> Agent
 
+    %% 백엔드 및 AI 에이전트 연결
+    Router --> Validator --> Agent
     Agent <--> State
+    Router --> Tool_Vision
+
+    %% 에이전트 도구 오케스트레이션
     Agent --> Tool_Routing
     Agent --> Tool_Steps
     Agent --> Tool_Slope
@@ -120,18 +110,22 @@ flowchart TB
     Agent --> Tool_Weather
     Agent --> Tool_Parking
 
+    %% 도구와 외부 서비스 간 연결
     Tool_Routing <--> ORS_API
     Tool_Steps <--> OSM_DATA
     Tool_Slope <--> DEM_DATA
     Tool_Shade <--> BUILDING_DATA
     Tool_Weather <--> KMA_API
+    Tool_Parking <--> PARKING_API
     Tool_Vision <--> Storage
 
     Tool_Scorer --> Agent
 
-    UI -.->|커뮤니티 코스 공유 시에만| Courses
+    %% 클라우드 저장소 연결
+    UI -.->|커뮤니티 코스 공유 시에만 (200m 마스킹)| Courses
     UI -.->|간편 이메일 가입/로그인| Users
     CameraModule -.->|위험 제보 시| Hazards
+    n8n --> KMA_API
 ```
 
 ---
@@ -145,17 +139,17 @@ flowchart TB
      - 반려견 선택 드롭다운, 관절 안심 케어 수준 및 웰니스 기본 설정 표시, 목표 산책 시간 슬라이더(10~90분, 권장 15~60분), 선호 산책 조건 선택 칩(폭신한 흙길/완만한 경사/그늘 우선). (※ 슬개골 탈구 등 질병 용어 전면 배제)
   2. **Map Route Viewer (React Native Maps)**:
      - GeoJSON 기반 구간별 보행 속성 분기 렌더링:
-       - 🌿 잔디/완만길: `#10B981` (Green-500)
-       - 🍂 흙길: `#B45309` (Amber-700)
+       - 🌿 완만/그늘/잔디길: `#10B981` (Green-500)
+       - 🍂 흙길: `#92400E` (Amber-800)
        - 🏃 탄성포장: `#F97316` (Orange-500)
        - 🏢 보도블록/일반길: `#3B82F6` (Blue-500)
-       - ⚠️ 높은 턱/주의구간: `#EF4444` (Red-500)
+       - ⚠️ 높은 턱/급경사/주의구간: `#EF4444` (Red-500)
   3. **Hands-Free Voice Navigation Engine**:
-     - **Android Foreground Service**로 백그라운드 GPS 위치를 지속 수신.
-     - OSRM/ORS `steps` 정보(회전각, 거리)와 경로 속성을 결합해 30m 전 `expo-speech` 사전 브리핑 송출 (*"50m 앞 완만한 흙길입니다. 우회전하세요"*).
+     - **Android Foreground Service**로 백그라운드 GPS 위치를 지속 수신 (화면 꺼짐 시에도 연속 트래킹).
+     - OSRM/ORS `steps` 정보(회전각, 거리)와 경로 속성을 결합해 회전 30m 전 `expo-speech` 사전 브리핑 송출 (*"50m 앞 완만한 흙길입니다. 우회전하세요"*), 40m 이상 이탈 감지 시 재탐색 음성 경고.
   4. **AsyncStorage Local Storage Manager**:
-     - `dog_profile`: 체급, 연령, 관절 안심 케어 수준 로컬 보관 (서버 미전송).
-     - `walk_history`: 실제 보행 GPS 궤적 및 완주 인포그래픽 데이터 영구 보관.
+     - `dog_profile`: 체급, 연령, 관절 안심 케어 수준 로컬 보관 (서버 절대 미전송).
+     - `walk_history`: 실제 보행 GPS 궤적 및 완주 인포그래픽 데이터 영구 보관 (최근 100회 한도 FIFO).
      - `favorites`: 나만의 안심 코스 즐겨찾기 북마크 로컬 캐싱 및 즉시 재산책 연동.
   5. **EAS Update 무중단 OTA 모듈**:
      - 앱 시작 시 Expo CDN에서 최신 JS 번들 체크 및 무선 무점검 핫픽스 즉시 적용.
@@ -168,19 +162,37 @@ flowchart TB
 | Method | Endpoint | 설명 | 핵심 DTO (In / Out) |
 |:---:|---|---|---|
 | `POST` | `/api/v1/walk/plan` | 로컬 프로필+조건 기반 최적 코스 생성 (무상태) | In: `WalkPlanRequest` ➔ Out: `WalkPlanResponse` |
-| `POST` | `/api/v1/walk/reroute` | 현장 위험 감지 시 안전 우회 재탐색 | In: `RerouteRequest` ➔ Out: `WalkPlanResponse` |
-| `POST` | `/api/v1/surface/inspect` | 현장 사진 업로드 기반 시각적 위험물 판독 | In: `UploadFile(Image)` ➔ Out: `HazardReport` |
-| `POST` | `/api/v1/community/share` | 완주 코스 공유 (출발지 200m 마스킹 적용) | In: `CourseShareRequest` ➔ Out: `CommunityCourse` |
-| `GET` | `/api/v1/community/feed` | 다른 견주들의 공유 코스 피드 조회 | Out: `List[CommunityCourseSummary]` |
-| `POST` | `/api/v1/hazards` | 현장 위험 제보 등록 (공공 안전용) | In: `HazardCreateRequest` ➔ Out: `HazardReport` |
-| `GET` | `/api/v1/parking/nearby` | 출발지 반경 내 P&R 공영주차장 목록 조회 | In: `lat, lon, radius` ➔ Out: `List[ParkingLot]` |
-| `GET` | `/api/v1/weather/heat-risk`| 기상청 예보 기반 시간대별 열 위험 지수 조회 | In: `lat, lon` ➔ Out: `HeatRiskResponse` |
+| `POST` | `/api/v1/walk/reroute` | 현장 위험 감지 시 안전 우회 동적 재산출 (3초 이내) | In: `RerouteRequest` ➔ Out: `WalkPlanResponse` |
+| `POST` | `/api/v1/surface/analyze` | 현장 사진 업로드 기반 시각적 위험물 판독 | In: `UploadFile(Image)` ➔ Out: `HazardInspectionResult` |
+| `POST` | `/api/v1/walks/inspect-board` | 공원 입구 오프라인 안내판 판독 및 금지구역 파싱 | In: `UploadFile(Image)` ➔ Out: `ParkBoardInspectionResult` |
+| `GET` | `/api/v1/thermal/golden-time` | 기상청 예보 기반 시간대별 열 위험 지수 및 골든타임 | In: `lat, lon` ➔ Out: `HeatRiskResponse` |
+| `GET` | `/api/v1/parking/nearby` | 출발 거점 반경 1.5km 이내 P&R 공영주차장 목록 조회 | In: `lat, lon, radius` ➔ Out: `List[ParkingLotDTO]` |
+| `POST` | `/api/v1/community/share` | 완주 코스 공유 (출발지 200m 마스킹 블러링 필수) | In: `CourseShareRequest` ➔ Out: `CommunityCourseDTO` |
+| `GET` | `/api/v1/community/feed` | 다른 견주들의 공개 공유 코스 피드 조회 | Out: `List[CommunityCourseSummary]` |
+| `POST` | `/api/v1/hazards/report` | 현장 위험 제보 등록 (공공 안전용) | In: `HazardCreateRequest` ➔ Out: `HazardReportDTO` |
 
 ---
 
-## 4. 핵심 데이터 모델 및 DTO 명세
+### 3.3 AI Agent & Intelligence 계층 (LangGraph & Gemini)
+1. **LangGraph ReAct Agent**:
+   - `AgentState`를 기반으로 사용자의 자연어 요청과 클라이언트 전달 로컬 맥락(`client_dog_context`, `client_recent_feedback`)을 주입받아 무상태로 실행.
+   - Pydantic V2 Strict Input Schema를 통해 `TargetDuration`(10~90분), `AvoidStairs`, `SlopePreference`, `ShadePriority` 4대 엔티티 검증.
+2. **Gemini 가용 모델 순차 선택 체인 (`GeminiModelSelector`)**:
+   - **1순위 `gemini-3.5-flash-lite` ➔ 2순위 `gemini-3.1-flash-lite` ➔ 3순위 `gemini-3.6-flash`** 순차 자동 선택 체인 (Cascading Fallback).
+   - 구형/단종된 `gemini-1.5` 계열 호출 전면 배제 (호출 시 즉각 예외 발생).
+   - Structured JSON 강제 (`response_mime_type="application/json"`).
+3. **Candidate Route Scorer (100점 만점 랭킹)**:
+   - 복수의 후보 루프 코스를 다요소 가중 평가:
+     - 계단 완전 배제 무결성: **30점**
+     - 완만 경사 적합도: **30점**
+     - 그늘 확보율: **20점**
+     - 목표 시간/거리 수렴도: **20점**
 
-### 4.1 WalkPlanRequest (클라이언트 로컬 데이터 동봉)
+---
+
+### 3.4 핵심 데이터 모델 및 DTO 명세
+
+#### 1. WalkPlanRequest (클라이언트 로컬 데이터 동봉)
 ```json
 {
   "origin": {"lat": 37.492, "lon": 126.923},
@@ -191,7 +203,7 @@ flowchart TB
   "client_dog_context": {
     "breed": "Maltese",
     "age_years": 9,
-    "speed_kmh": 2.6,
+    "speed_kmh": 2.8,
     "joint_care_level": "high"
   },
   "client_recent_feedback": [
@@ -201,7 +213,7 @@ flowchart TB
 }
 ```
 
-### 4.2 WalkPlanResponse (생성된 경로 및 음성 스텝 응답)
+#### 2. WalkPlanResponse (생성된 경로 및 음성 스텝 응답)
 ```json
 {
   "route_id": "route_local_123",
@@ -242,6 +254,18 @@ flowchart TB
   }
 }
 
+// AsyncStorage 키: @PawTrail:walk_history (최근 100회 한도 FIFO)
+[
+  {
+    "walk_id": "walk_local_01",
+    "date": "2026-09-24T02:00:00Z",
+    "duration_min": 24,
+    "distance_m": 1150.0,
+    "gps_track": [{"lat": 37.492, "lon": 126.923}, "..."],
+    "feedback": {"rating": 5, "tags": ["gentle_slope", "cool_shade"]}
+  }
+]
+
 // AsyncStorage 키: @PawTrail:favorites (나만의 코스 북마크)
 [
   {
@@ -249,7 +273,7 @@ flowchart TB
     "title": "우리 동네 숲길 완만 코스",
     "target_duration_min": 25,
     "total_distance_m": 1280.0,
-    "geojson": { "type": "FeatureCollection", "features": [...] },
+    "geojson": { "type": "FeatureCollection", "features": [] },
     "created_at": "2026-09-21T10:00:00Z"
   }
 ]
@@ -262,7 +286,7 @@ flowchart TB
 -- 1. 사용자 계정 (Supabase Auth 기본 연동)
 -- auth.users 에 이메일/비밀번호 해시 자동 보관
 
--- 2. 커뮤니티 공개 코스 (자택 노출 방지: 출발지 200m 마스킹 적용)
+-- 2. 커뮤니티 공개 코스 (자택 노출 방지: 출발지/도착지 200m 마스킹 적용)
 CREATE TABLE community_courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -294,7 +318,6 @@ ALTER TABLE community_courses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public courses read" ON community_courses FOR SELECT USING (true);
 CREATE POLICY "Users can create courses" ON community_courses FOR INSERT WITH CHECK (auth.uid() = author_id);
 ```
-```
 
 ---
 
@@ -313,7 +336,7 @@ sequenceDiagram
 
     User->>Front: 산책 조건 입력 ("완만한 길로 20분 코스")
     Front->>Front: 로컬 AsyncStorage에서 반려견 프로필 병합
-    Front->>API: POST /api/walks/plan (조건 + Stateless DogProfile)
+    Front->>API: POST /api/v1/walk/plan (조건 + Stateless DogProfile)
     API->>Agent: Run WalkPlanningGraph(input)
     Agent->>RouterTool: generate_loop_route(origin, avoid_stairs=True, dur=20m)
     RouterTool-->>Agent: GeoJSON 순환 경로 + 회전(steps) + 경사/그늘 지표
@@ -345,11 +368,11 @@ sequenceDiagram
     actor User as 견주 (공원 입구)
     participant Front as Expo App (Frontend)
     participant API as FastAPI Backend
-    participant Vision as Gemini Flash (ParkBoardInspector)
+    participant Vision as Gemini Flash Chain (ParkBoardInspector)
     participant Agent as LangGraph Agent
 
     User->>Front: 공원 종합안내판 사진 촬영 및 업로드
-    Front->>API: POST /api/walks/inspect-board (Multipart Image)
+    Front->>API: POST /api/v1/walks/inspect-board (Multipart Image)
     API->>Vision: ParkBoardInspection Schema 질의 (공원명/노면범례/반려견제한구역)
     Vision-->>API: ParkBoardInspectionResult (흙길 산책로, 반려견 금지 잔디마당)
     API->>Agent: 안내판 제약조건 반영 (금지 구역 제외 & 흙길 Waypoint 우선화)
@@ -357,22 +380,24 @@ sequenceDiagram
     API-->>Front: 안내판 분석 결과 요약 모달 + 맞춤 추천 경로 렌더링
 ```
 
-#### 4.2.2 현장 위험물 제보 및 커뮤니티 공유 (산책 중/후)
+#### 4.2.2 현장 위험물 제보 및 우회 재탐색 (산책 중/후)
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as 견주 (산책 중 위험 구간 발견)
     participant Front as Expo App (Frontend)
     participant API as FastAPI Backend
-    participant Vision as Gemini Flash (HazardInspector)
+    participant Vision as Gemini Flash Chain (HazardInspector)
     participant DB as Supabase Cloud (hazard_reports)
 
     User->>Front: 현장 위험물(높은 턱/공사) 사진 촬영 업로드
-    Front->>API: POST /api/hazards/report (Photo, Lat, Lng)
+    Front->>API: POST /api/v1/surface/analyze (Photo, Lat, Lon)
     API->>Vision: 위험물 판독 질의 (턱 높이/공사자재/위험도)
     Vision-->>API: HazardInspectionResult (hazard_type='high_curb', severity='warning')
     API->>DB: INSERT into hazard_reports (공공 안전 제보 적재)
-    API-->>Front: "위험 구간 제보 완료. 안전 우회 경로 안내"
+    API-->>Front: "위험 구간 감지. 3초 이내 안전 우회 경로 안내"
+    Front->>API: POST /api/v1/walk/reroute (현위치 + 차단 노드)
+    API-->>Front: 새 우회 루프 코스 반환
 ```
 
 ---
@@ -399,8 +424,3 @@ sequenceDiagram
    - 자택 주소 및 상세 보행 GPS 궤적은 폰에만 저장, 커뮤니티 공유 시 출발지/도착지 200m 자동 공간 마스킹.
 4. **긍정적 웰니스 카피라이팅 준수**:
    - 앱 내에서 '슬개골 탈구' 등 질병 용어를 배제하고 "폭신한 길", "관절 안심 케어" 등 긍정적 웰니스 표현 사용.
-
-1. **시선 해방 안전성**: `expo-location`과 `expo-speech`의 유기적 결합으로 스마트폰 화면 주시를 원천 차단.
-2. **배포 효율성**: EAS Update 기반으로 1회 APK 설치 후 무선 OTA 핫픽스 실시간 적용.
-3. **개인정보 제로 원칙 (Zero PII on Server)**: 자택 주소 및 상세 궤적은 폰에만 저장, 공유 시 200m 자동 마스킹.
-4. **웰니스 용어 준수**: 앱 내에서 질병 용어를 배제하고 긍정적인 감성 케어 언어 사용.

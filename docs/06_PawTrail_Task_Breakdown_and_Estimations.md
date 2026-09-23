@@ -52,7 +52,7 @@
 | **TASK-A1-1** | LangGraph Agent 상태 그래프 스키마(`AgentState`) 및 노드 구조 설계 | Member A | 4 h | Week 1 | `AgentState` 인터페이스 정의 및 순환 그래프 구조 수립 |
 | **TASK-A1-2** | 자연어 발화에서 시간·계단·경사·그늘 선호 엔티티를 추출하는 ReAct 프롬프트 작성 | Member A | 6 h | Week 1 | Zero-shot/Few-shot 프롬프트 템플릿 및 엔티티 추출률 85% 검증 |
 | **TASK-A1-3** | Pydantic V2 Strict Input Schema 및 요청 본문의 로컬 프로필 바인딩 모듈 개발 | Member A | 6 h | Week 1 | `WalkIntent` Pydantic 모델 및 클라이언트 페이로드 병합 검증 |
-| **TASK-A1-4** | FastAPI REST API 연동 및 모의 발화 10종 엔티티 추출 단위/통합 테스트 | Member A | 8 h | Week 1 | `POST /api/walks/plan` 질의 10종 파싱 테스트 및 예외 폴백 검증 |
+| **TASK-A1-4** | FastAPI REST API 연동 및 모의 발화 10종 엔티티 추출 단위/통합 테스트 | Member A | 8 h | Week 1 | `POST /api/v1/walk/plan` 질의 10종 파싱 테스트 및 예외 폴백 검증 |
 
 ---
 
@@ -195,7 +195,7 @@
 | **TASK-D1-1** | 현장 위험물(높은 턱, 계단, 공사) 및 공원 안내판 벤치마킹 이미지셋 구축 및 라벨링 | Member B | 6 h | Week 3 | 35장 이상의 도심/공원 보행 장애물 이미지 데이터셋 구축 |
 | **TASK-D1-2** | Gemini 가용 모델 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 프롬프트 엔지니어링 및 Structured JSON 스키마 고정 | Member B | 7 h | Week 3 | `has_hazard`, `hazard_type`, `confidence` 정형 출력 스키마 고정 |
 | **TASK-D1-3** | 모션 블러, 저조도 사진 입력 시 예외 처리 및 사용자 재촬영 가이드 로직 구현 | Member B | 5 h | Week 3 | 저품질 이미지 입력 시 폴백 및 사용자 친화적 촬영 가이드 반환 |
-| **TASK-D1-4** | 이미지 업로드 REST API(`POST /api/walks/inspect-board`) 연동 및 지연시간 최적화 | Member B | 6 h | Week 3 | 이미지 리사이징(1024px) 파이프라인 및 응답 시간 2.5초 이내 달성 |
+| **TASK-D1-4** | 이미지 업로드 REST API(`POST /api/v1/walks/inspect-board`) 연동 및 지연시간 최적화 | Member B | 6 h | Week 3 | 이미지 리사이징(1024px) 파이프라인 및 응답 시간 2.5초 이내 달성 |
 
 ---
 
@@ -207,7 +207,7 @@
 | Task ID | 세부 작업 내용 (Task Specification) | 담당자 | 공수 | 주차 | 완료 정의 및 산출물 (DoD / Deliverables) |
 |:---:|---|:---:|:---:|:---:|---|
 | **TASK-D2-1** | Vision 판독 위험 신뢰도(Confidence >= 0.85) 필터링 및 우회 트리거 이벤트 연동 | Member B | 4 h | Week 3 | 위험 판독 신뢰도 임계치 판정 및 위험 메타데이터 전달 핸들러 |
-| **TASK-D2-2** | 위험 감지 좌표 기준 인접 링크 임시 차단(Block List) 및 안전 우회 경로 재탐색 API 구현 | Member C | 8 h | Week 3 | `POST /api/routes/reroute` 차단 링크 우회 순환 루프 연산 API 구현 |
+| **TASK-D2-2** | 위험 감지 좌표 기준 인접 링크 임시 차단(Block List) 및 안전 우회 경로 재탐색 API 구현 | Member C | 8 h | Week 3 | `POST /api/v1/walk/reroute` 차단 링크 우회 순환 루프 연산 API 구현 |
 | **TASK-D2-3** | 우회 사유 및 변경 경로 에이전트 음성 브리핑 메시지 생성 체인 연동 | Member A | 5 h | Week 4 | "전방 공사 구역을 피해 오른쪽 완만한 길로 안내합니다" 브리핑 생성 |
 | **TASK-D2-4** | 모바일 지도 화면 상 우회 경로 실시간 갱신 및 토스트/확인 모달 인터랙션 구현 | Member D | 5 h | Week 4 | 기존 경로 페이드아웃, 신규 우회 경로 하이라이팅 및 갱신 UI 검증 |
 
@@ -274,7 +274,7 @@
 |:---:|---|:---:|:---:|:---:|---|
 | **TASK-F1-1** | 기상청 단기예보 API 클라이언트 및 n8n/스케줄러 기반 시간대별 기온/운량 파싱 | Member B | 4 h | Week 4 | 기상청 격자 좌표 변환 및 매시간 기온, 풍속, 하늘상태 파싱 파이프라인 |
 | **TASK-F1-2** | 시간대별 일사량 및 지면열 위험 지수(안전/주의/위험) 산출 수지식 모듈 구현 | Member B | 3 h | Week 4 | 일사량 회귀식을 통한 지면온도 추정 및 3단계 열 위험도 산출 모듈 |
-| **TASK-F1-3** | 열 위험 지수 캐싱(`weather_cache`) 및 REST API(`GET /api/weather/heat-risk`) 구현 | Member C | 2 h | Week 4 | 30분 TTL 인메모리 캐싱 적용 및 100ms 이내 빠른 응답 엔드포인트 구현 |
+| **TASK-F1-3** | 열 위험 지수 캐싱(`weather_cache`) 및 REST API(`GET /api/v1/thermal/golden-time`) 구현 | Member C | 2 h | Week 4 | 30분 TTL 인메모리 캐싱 적용 및 100ms 이내 빠른 응답 엔드포인트 구현 |
 | **TASK-F1-4** | 플래너 상단 산책 골든타임 알림 카드 및 위험 시간대 경고 배너 비주얼 디자인 | Member E | 3 h | Week 4 | 35℃ 이하 안심 시간대 골든타임 표출 카드 및 위험 경고 배너 시각화 |
 
 ---
@@ -293,7 +293,7 @@
 | Task ID | 세부 작업 내용 (Task Specification) | 담당자 | 공수 | 주차 | 완료 정의 및 산출물 (DoD / Deliverables) |
 |:---:|---|:---:|:---:|:---:|---|
 | **TASK-G1-1** | 전국 공영주차장 공공데이터 API 클라이언트 및 좌표 반경 검색 모듈 구현 | Member B | 4 h | Week 4 | 출발지 1km 반경 내 무료/유료 공영주차장 위치 및 요금 정보 조회 |
-| **TASK-G1-2** | 주차장 출입구 좌표 연계 순환 산책 코스 생성 엔드포인트(`GET /api/parking/nearby`) 연동 | Member C | 3 h | Week 4 | 주차장 출입구에 스냅핑된 순환 산책 루프 Waypoint 자동 생성 |
+| **TASK-G1-2** | 주차장 출입구 좌표 연계 순환 산책 코스 생성 엔드포인트(`GET /api/v1/parking/nearby`) 연동 | Member C | 3 h | Week 4 | 주차장 출입구에 스냅핑된 순환 산책 루프 Waypoint 자동 생성 |
 | **TASK-G1-3** | 플래너 내 '주차 거점 산책' 토글 및 인근 주차장 선택 바텀시트 UI/UX 디자인 | Member E | 3 h | Week 4 | 주차 거점 모드 전환 스위치 및 주차장 선택 인터랙션 컴포넌트 설계 |
 
 ---
@@ -453,7 +453,7 @@
 | **TASK-D1-1** | US-D1 | 현장 위험물(높은 턱, 계단, 공사) 및 공원 안내판 벤치마킹 이미지셋 구축 및 라벨링 | 6 h | Week 3 |
 | **TASK-D1-2** | US-D1 | Gemini 가용 모델 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 프롬프트 엔지니어링 및 Structured JSON 스키마 고정 | 7 h | Week 3 |
 | **TASK-D1-3** | US-D1 | 모션 블러, 저조도 사진 입력 시 예외 처리 및 사용자 재촬영 가이드 로직 구현 | 5 h | Week 3 |
-| **TASK-D1-4** | US-D1 | 이미지 업로드 REST API(`POST /api/walks/inspect-board`) 연동 및 지연시간 최적화 | 6 h | Week 3 |
+| **TASK-D1-4** | US-D1 | 이미지 업로드 REST API(`POST /api/v1/walks/inspect-board`) 연동 및 지연시간 최적화 | 6 h | Week 3 |
 | **TASK-D2-1** | US-D2 | Vision 판독 위험 신뢰도(Confidence >= 0.85) 필터링 및 우회 트리거 이벤트 연동 | 4 h | Week 3 |
 | **TASK-F1-1** | US-F1 | 기상청 단기예보 API 클라이언트 및 n8n/스케줄러 기반 시간대별 기온/운량 파싱 | 4 h | Week 4 |
 | **TASK-F1-2** | US-F1 | 시간대별 일사량 및 지면열 위험 지수(안전/주의/위험) 산출 수지식 모듈 구현 | 3 h | Week 4 |
@@ -480,8 +480,8 @@
 | **TASK-B4-1** | US-B4 | OpenRouteService / OSRM REST API 연동 독립 어댑터(Adapter) 레이어 구현 | 10 h | Week 1 |
 | **TASK-B4-2** | US-B4 | 출발지 중심 다각형 Waypoint 샘플링 기반 순환 루프 후보(2~3개) 생성 모듈 개발 | 8 h | Week 1 |
 | **TASK-D2-2** | US-D2 | 위험 감지 좌표 기준 인접 링크 임시 차단(Block List) 및 안전 우회 경로 재탐색 API 구현 | 8 h | Week 3 |
-| **TASK-F1-3** | US-F1 | 열 위험 지수 캐싱(`weather_cache`) 및 REST API(`GET /api/weather/heat-risk`) 구현 | 2 h | Week 4 |
-| **TASK-G1-2** | US-G1 | 주차장 출입구 좌표 연계 순환 산책 코스 생성 엔드포인트(`GET /api/parking/nearby`) 연동 | 3 h | Week 4 |
+| **TASK-F1-3** | US-F1 | 열 위험 지수 캐싱(`weather_cache`) 및 REST API(`GET /api/v1/thermal/golden-time`) 구현 | 2 h | Week 4 |
+| **TASK-G1-2** | US-G1 | 주차장 출입구 좌표 연계 순환 산책 코스 생성 엔드포인트(`GET /api/v1/parking/nearby`) 연동 | 3 h | Week 4 |
 | **TASK-G2-1** | US-G2 | Supabase Auth 기반 간편 이메일 가입/로그인 모듈 구축 (Auto-confirm 활성화) | 4 h | Week 4 |
 | **TASK-G2-3** | US-G2 | Supabase `community_courses` 테이블 적재 및 공개 피드 조회 REST API 구현 | 4 h | Week 4 |
 | **소계** | **8개 스토리** | **Member C 전담 Task 14개 합계** | **91 h** | — |
