@@ -31,14 +31,12 @@
 
 ---
 
-## 🧪 3. AI 페어링 후 필수 검증 절차 (TDD Verification)
+## 🤖 4. AI Pair Programming 자동 점검 시스템 (Automated Enactment)
 
-모든 코드 생성 및 리팩토링 후에는 반드시 로컬 터미널에서 전체 TDD 테스트 스위트를 실행하여 회귀 버그(Regression)가 없음을 검증해야 합니다:
+본 체크리스트의 모든 항목은 팀원이 매번 일일이 문서를 열어보고 수동으로 점검하지 않아도 되도록, **IDE 및 에이전트 시스템 레벨에서 자동 강제(Enforced)**되도록 구성되어 있습니다:
 
-```bash
-# 전체 테스트 스위트 실행 (74개 테스트 100% 통과 확인)
-python -m pytest test_case/
-```
-
-- 테스트 실패 시, 즉시 AI에게 실패 원인 트레이스백(Traceback)을 피드백하여 수정합니다.
-- 수정 완료 후 관련된 기획서(01), 아키텍처(04), 추적 매트릭스(07) 문서에 변경된 스키마를 동기화합니다.
+- **자동 규칙 바인딩 경로**: [`.agents/rules/ai_pair_programming_rules.md`](file:///d:/코디세이/PawTrail/.agents/rules/ai_pair_programming_rules.md) 및 [`.gemini/GEMINI.md`](file:///d:/코디세이/PawTrail/.gemini/GEMINI.md)
+- **작동 방식**:
+  1. AI(Antigravity / Gemini)가 코드 작업 대상 파일(예: `backend/`, `frontend/`, `vision/` 등)을 식별하는 즉시 해당 역할의 체크리스트를 **사전 컨텍스트로 자동 로딩**합니다.
+  2. 코드 생성 중 `gemini-1.5` 모델 호출이나 '슬개골 탈구' 등 임상 질병 단어, 계단 누락, 클린코드 임계치(250줄/40줄/복잡도 10) 위반이 감지되면 **AI가 스스로 코드를 교정(Self-Correction)**합니다.
+  3. 코드 생성 완료 후 `pytest test_case/` 회귀 테스트 및 검증 체크를 수행하여 최종 산출물의 무결성을 자동 보장합니다.

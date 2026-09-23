@@ -14,9 +14,10 @@ PawTrail은 딱딱한 아스팔트와 보도블록 대신 **흙길, 잔디길, �
 
 | 구분 | 현황 및 진행 내용 | 비고 |
 |---|---|---|
-| **현재 마일스톤** | **Sprint 1 착수 (도메인 설계 및 TDD 스펙 100% 수립 완료)** | 16개 User Story / 55개 Task / 62 pt / 334 h |
-| **TDD 명세 검증** | **71개 도메인 알고리즘·스키마 테스트 통과** | `pytest test_case/` (0.49s, 자체 내장 스펙 검증) |
-| **핵심 알고리즘** | **노면 비용 수지식, 지면열 공식, 거리 환산 수식 정립** | 수학적 모델 및 Pydantic V2 DTO 규격 확정 |
+| **현재 마일스톤** | **Sprint 1 착수 (도메인 설계 및 TDD 스펙 100% 수립 완료)** | 18개 User Story / 68개 Task / 77 pt / 372 h |
+| **TDD 명세 검증** | **74개 도메인 알고리즘·스키마 테스트 통과** | `pytest test_case/` (0.20s, 자체 내장 스펙 검증) |
+| **핵심 알고리즘** | **Gemini 가용 체인(3.5/3.1/3.6), 노면비용, 지면열, 거리 수식** | 수학적 모델 및 Pydantic V2 DTO 규격 확정 |
+| **협업 거버넌스** | **역할별 AI Pair Programming 체크리스트 및 외장 인프라 매뉴얼 완비** | `docs/checklist/`, `docs/guideline/` 완비 |
 | **UI/UX 디자인** | **6대 핵심 시나리오 UI 화면 목업 및 뷰어 제작 완료** | `docs/screens/` 고화질 디자인 및 웹 뷰어 완비 |
 | **다음 진행 작업** | **FastAPI 백엔드 서비스 구축 & React Native 앱 초기화** | TDD 로직의 `services/` 모듈화 및 실제 API 연동 |
 
@@ -221,8 +222,10 @@ docs/
 ├── 05_PawTrail_Detailed_Implementation_Plan.md [5단계: 5주간 주차별 스프린트 마일스톤 및 협업 계획]
 ├── 06_PawTrail_Task_Breakdown_and_Estimations.md [6단계: 68개 구현 세부 Task 및 372h 공수 산정]
 ├── 07_PawTrail_Traceability_Matrix.md        [7단계: 요구사항 양방향 추적 매트릭스 (RTM)]
+├── checklist/                                [팀원 5인 역할별 AI Pair Programming 점검 체크리스트]
+├── guideline/                                [팀원 5인 역할별 인프라 구축 및 외장 활동 매뉴얼]
 ├── presentation/                             [최종 발표 슬라이드 전략 및 Q&A 방어 논리 스크립트]
-├── reports/                                  [일일 스크럼 개발 일지 (2026-09-21.md 등)]
+├── reports/                                  [일일 스크럼 개발 일지 (2026-09-24.md 등)]
 ├── reviews/                                  [Gemini Code Assist 가이드 및 항공/로드뷰 분석]
 └── screens/                                  [6대 핵심 화면 고화질 목업 및 인터랙티브 웹 뷰어]
 ```
@@ -250,13 +253,13 @@ docs/
 # 1. 테스트 실행 환경 설치 (Python 3.10+)
 pip install pytest pydantic httpx
 
-# 2. 전체 71개 도메인 명세 테스트 일괄 검증
+# 2. 전체 74개 도메인 명세 테스트 일괄 검증
 python -m pytest test_case/ -v
 ```
 
 실행 결과:
 ```
-============================== 71 passed in 0.49s ==============================
+============================== 74 passed in 0.20s ==============================
 ```
 
 ### 7.3 테스트 모듈별 검증 명세 (`test_case/`)
@@ -266,7 +269,7 @@ python -m pytest test_case/ -v
 | [`test_surface_cost_model.py`](file:///d:/코디세이/PawTrail/test_case/test_surface_cost_model.py) | **US-02, US-03** | • 노면 비용 공식($\text{Cost} = \text{Length} \times W_{\text{base}} \times W_{\text{pref}}$)<br>• 환경부 토지피복 Spatial Join 및 5단계 `surface_source` 투명성 태깅<br>• 선호 노면 점유율 $\ge 50\%$ 순환 루프 경로 생성 |
 | [`test_walk_plan_agent_schema.py`](file:///d:/코디세이/PawTrail/test_case/test_walk_plan_agent_schema.py) | **US-01, US-06** | • Pydantic V2 산책 생성 요청 엄격 검증(시간 10~90분, 좌표 유효성)<br>• 필수 파라미터 누락 시 Clarification(되물음) 트리거<br>• 반려견 관절 안심 케어 수준(`joint_care_level`) 및 메모리 주입 |
 | [`test_loop_target_duration.py`](file:///d:/코디세이/PawTrail/test_case/test_loop_target_duration.py) | **US-16** | • 시간 기반 목표 거리($D = V \times T$) 산출 및 오차 ±10% 이내 루프 생성<br>• 15분, 30분, 45분 시간대별 및 견종 체급별 거리 환산 정밀도 |
-| [`test_vision_safety_inspector.py`](file:///d:/코디세이/PawTrail/test_case/test_vision_safety_inspector.py) | **US-04, US-05** | • 공원 종합안내판 비전 판독(`ParkBoardInspector`) 및 출입금지구역 우회<br>• 완주 후기 사진 비전 검증(`CommunityMapEnricher`, 신뢰도 $\ge 0.85$ 보강) |
+| [`test_vision_safety_inspector.py`](file:///d:/코디세이/PawTrail/test_case/test_vision_safety_inspector.py) | **US-04, US-05, US-D1** | • Gemini 가용 체인(3.5 Flash-Lite ➔ 3.1 Flash-Lite ➔ 3.6 Flash) 순차 선택<br>• 공원 종합안내판 비전 판독(`ParkBoardInspector`) 및 출입금지구역 우회<br>• 완주 후기 사진 비전 검증(`CommunityMapEnricher`, 신뢰도 $\ge 0.85$ 보강) |
 | [`test_walk_tracking_and_feedback.py`](file:///d:/코디세이/PawTrail/test_case/test_walk_tracking_and_feedback.py) | **US-08, US-09, US-11, US-15** | • 선호 노면 달성률(%) 계산, 체크인 피드백 및 5인 CBT 가중치 재조정<br>• 오프라인 로컬 저장소 동기화 검증 |
 | [`test_thermal_and_parking.py`](file:///d:/코디세이/PawTrail/test_case/test_thermal_and_parking.py) | **US-12, US-13** | • 기상청 일사량 연동 지면열 수지식 연산 및 35℃ 이하 골든타임 도출<br>• 반경 1.5km 이내 공영주차장(P&R) 필터링 |
 | [`test_api_contracts.py`](file:///d:/코디세이/PawTrail/test_case/test_api_contracts.py) | **REST API Contract** | • FastAPI 핵심 REST API 엔드포인트 입출력 DTO 계약 검증<br>• GeoJSON FeatureCollection 및 나만의 코스 즐겨찾기 스키마 |
@@ -289,17 +292,20 @@ python -m pytest test_case/ -v
 ### 8.2 단계별 완료 정의 (Definition of Done)
 
 #### ✅ 현재 달성된 항목 (Design & Specification DoD)
-- [x] 16개 애자일 사용자 스토리 및 55개 구현 Task (334h) 분할 완료
+- [x] 18개 애자일 사용자 스토리 및 68개 구현 Task (372h) 5인 R&R 분할 완료
 - [x] 노면 비용 함수, 지면열 수지식, 견종별 거리 환산 수식 등 핵심 알고리즘 수학적 모델 정립
 - [x] Pydantic V2 기반 입출력 DTO 및 FastAPI REST API 규격 계약 완료
-- [x] 71개 TDD 도메인 명세 테스트 작성 및 100% 통과 (0.49s)
+- [x] 74개 TDD 도메인 명세 테스트 작성 및 100% 통과 (0.20s)
+- [x] Gemini 가용 모델 3단계 순차 선택 체인(`3.5 Flash-Lite` ➔ `3.1 Flash-Lite` ➔ `3.6 Flash`) 구축
+- [x] 5인 역할별 AI Pair Programming 체크리스트 (`docs/checklist/`) 완비
+- [x] 5인 역할별 인프라 구축 및 외장 활동 매뉴얼 (`docs/guideline/`) 완비
 - [x] 6대 핵심 시나리오 UI 화면 목업 및 인터랙티브 웹 뷰어 완비
 
 #### 🚀 향후 구현 및 배포 시 충족할 항목 (Production DoD)
 - [ ] 실제 FastAPI 백엔드 구축 및 외부 서비스(OSRM, Gemini 가용 모델 체인, Supabase) 실연동
 - [ ] React Native Expo 앱 구축 및 Android Foreground Service 백그라운드 음성 길 안내 구현
 - [ ] 앱 UI 및 음성 스크립트 내 질병 용어 100% 배제 및 긍정적 웰니스 언어 준수
-- [ ] 개인정보 보호(출발지/거주지 좌표 100m 지터링 마스킹) 적용
+- [ ] 개인정보 보호(출발지/거주지 좌표 200m 지터링 마스킹) 적용
 - [ ] EAS 무선 OTA 배포 파이프라인 가동 및 실제 견주 5인 현장 CBT 완수
 
 ---
@@ -325,8 +331,10 @@ python -m pytest test_case/ -v
 
 * 📊 **최종 발표 자료 (PPTX)**: [`docs/presentation/PawTrail_Soft_Path_Engineering.pptx`](file:///d:/코디세이/PawTrail/docs/presentation/PawTrail_Soft_Path_Engineering.pptx)
 * 📱 **인터랙티브 UI 스크린 뷰어**: [`docs/screens/index.html`](file:///d:/코디세이/PawTrail/docs/screens/index.html)
-* 📋 **요구사항 양방향 추적 매트릭스**: [`docs/08_PawTrail_Traceability_Matrix.md`](file:///d:/코디세이/PawTrail/docs/08_PawTrail_Traceability_Matrix.md)
-* 📅 **최신 일일 스크럼 개발 일지**: [`docs/reports/2026-09-18.md`](file:///d:/코디세이/PawTrail/docs/reports/2026-09-18.md)
+* 📋 **요구사항 양방향 추적 매트릭스**: [`docs/07_PawTrail_Traceability_Matrix.md`](file:///d:/코디세이/PawTrail/docs/07_PawTrail_Traceability_Matrix.md)
+* 📝 **AI Pair Programming 점검 체크리스트**: [`docs/checklist/README.md`](file:///d:/코디세이/PawTrail/docs/checklist/README.md)
+* 🛠️ **역할별 인프라 구축 및 외장 매뉴얼**: [`docs/guideline/README.md`](file:///d:/코디세이/PawTrail/docs/guideline/README.md)
+* 📅 **최신 일일 스크럼 개발 일지**: [`docs/reports/2026-09-24.md`](file:///d:/코디세이/PawTrail/docs/reports/2026-09-24.md)
 * 🧪 **TDD 테스트 스위트 가이드**: [`test_case/README.md`](file:///d:/코디세이/PawTrail/test_case/README.md)
 
 ---

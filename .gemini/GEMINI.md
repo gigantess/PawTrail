@@ -260,3 +260,10 @@ Gemini는 코드를 제안하거나 수정할 때 다음 6단계를 내부적으
 4. **[테스트 동기화 검증 (필수)]**: 사용자 스토리나 Task의 변경사항이 테스트케이스(인수조건 검증, 스키마, Fixture, 기대값)에 빠짐없이 반영·갱신되었으며, 전수 테스트를 통과했는가?
 5. **[사용자 경험 검증]**: 로딩, 에러, 빈 상태가 처리되었고, 노면 색상 규격과 음성 길 안내 등 야외 실사용성이 충족되었으며 질병 용어가 배제되었는가?
 6. **[협업 및 형상관리 검증]**: 작업 내용이 독립된 feature 브랜치 단위로 격리되어 있으며, MR 생성을 위한 커밋 메시지 규격과 사전 테스트 통과 조건을 충족했는가?
+7. **[5인 역할별 AI Pair Programming 자동 점검 (docs/checklist/ 전수 강제)]**:
+   - 코드를 생성/수정/리팩토링할 때, 팀원이 수동으로 확인하지 않아도 AI가 작업 대상 모듈에 맞는 [`docs/checklist/`](file:///d:/코디세이/PawTrail/docs/checklist/) 및 [`.agents/rules/ai_pair_programming_rules.md`](file:///d:/코디세이/PawTrail/.agents/rules/ai_pair_programming_rules.md)의 점검 항목을 **사전/사후에 자동으로 전수 검증**한 후 결과를 도출합니다:
+     - **Member A (Agent/PM)**: 무상태 프롬프트 주입(`client_dog_context`), 10~90분 슬라이더 엄격 검증, Candidate Scorer 랭킹
+     - **Member B (AI/GIS)**: `GeminiModelSelector` 순차 체인(`3.5 Flash-Lite` ➔ `3.1 Flash-Lite` ➔ `3.6 Flash`, 1.5 전면 배제), Structured JSON, DEM 경사도 및 200m 공간 지터링
+     - **Member C (Backend)**: OSM 계단(`highway=steps`) 완전 배제, 3초 이내 위험 우회 재탐색, 클린코드(250줄/40줄/복잡도 10 이하)
+     - **Member D (Frontend)**: Android Foreground Service + `expo-speech` 백그라운드 GPS/음성 안내, Polyline 색상 분기, Local-First `AsyncStorage` 영속화
+     - **Member E (UI/UX)**: 긍정적 웰니스 카피라이팅(질병 용어 100% 배제), 야외 고대비(#FAFAFA, #1E293B) 디자인 토큰 준수
